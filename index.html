@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airbnb 월별 가계부</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #ff385c;
+    --primary-dark: #e0294a;
+    --green: #00a699;
+    --red: #ff385c;
+    --bg: #f7f7f7;
+    --card: #ffffff;
+    --text: #222222;
+    --text-light: #717171;
+    --border: #dddddd;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --radius: 12px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .month-nav button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text);
+    transition: background 0.15s;
+  }
+
+  .month-nav button:hover { background: var(--bg); }
+
+  .month-nav span {
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 140px;
+    text-align: center;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px;
+  }
+
+  /* Summary Cards */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .summary-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  .summary-card .label {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 4px;
+  }
+
+  .summary-card .value {
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .summary-card.income .value { color: var(--green); }
+  .summary-card.expense .value { color: var(--red); }
+  .summary-card.net .value.positive { color: var(--green); }
+  .summary-card.net .value.negative { color: var(--red); }
+
+  /* Chart */
+  .chart-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+
+  .chart-section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    height: 180px;
+    justify-content: center;
+  }
+
+  .chart-bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 150px;
+  }
+
+  .chart-bar {
+    width: 36px;
+    border-radius: 6px 6px 0 0;
+    min-height: 4px;
+    transition: height 0.4s ease;
+  }
+
+  .chart-bar.income-bar { background: var(--green); }
+  .chart-bar.expense-bar { background: var(--red); }
+
+  .chart-bar-group .chart-label {
+    font-size: 12px;
+    color: var(--text-light);
+  }
+
+  .chart-legend {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-light);
+  }
+
+  .chart-legend span::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .chart-legend .leg-income::before { background: var(--green); }
+  .chart-legend .leg-expense::before { background: var(--red); }
+
+  /* Add Transaction */
+  .add-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+
+  .add-section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+
+  .form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: var(--primary);
+  }
+
+  .btn-add {
+    align-self: flex-end;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    height: fit-content;
+    margin-top: auto;
+  }
+
+  .btn-add:hover { background: var(--primary-dark); }
+
+  /* Transaction List */
+  .list-section {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .list-header {
+    padding: 20px 24px 12px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .tx-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .tx-table th {
+    text-align: left;
+    padding: 10px 24px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .tx-table td {
+    padding: 14px 24px;
+    font-size: 14px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .tx-table tr:last-child td { border-bottom: none; }
+
+  .tx-table tr:hover { background: #fafafa; }
+
+  .tx-type {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .tx-type.income { background: #e6f7f5; color: var(--green); }
+  .tx-type.expense { background: #fff0f3; color: var(--red); }
+
+  .tx-amount.income { color: var(--green); font-weight: 600; }
+  .tx-amount.expense { color: var(--red); font-weight: 600; }
+
+  .btn-delete {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .btn-delete:hover {
+    color: var(--red);
+    background: #fff0f3;
+  }
+
+  .btn-edit {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .btn-edit:hover {
+    color: var(--green);
+    border-color: var(--green);
+    background: #e6f7f5;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-light);
+    font-size: 14px;
+  }
+
+  /* Settings Button */
+  .btn-settings {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text);
+    transition: background 0.15s;
+  }
+
+  .btn-settings:hover { background: var(--bg); }
+
+  /* Settings Panel */
+  .settings-panel {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+    display: none;
+  }
+
+  .settings-panel.open { display: block; }
+
+  .settings-panel h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .settings-panel .form-group {
+    margin-bottom: 12px;
+  }
+
+  .settings-panel .form-group input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .settings-panel .form-group input[type="text"]:focus {
+    border-color: var(--primary);
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+  }
+
+  /* Sync Button */
+  .btn-sync {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-sync:hover { opacity: 0.9; }
+  .btn-sync:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Sync Status */
+  .sync-status {
+    font-size: 13px;
+    margin-top: 12px;
+    min-height: 20px;
+  }
+
+  .sync-status.success { color: var(--green); }
+  .sync-status.error { color: var(--red); }
+  .sync-status.loading { color: var(--text-light); }
+
+  /* Auto Badge */
+  .badge-auto {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #e6f7f5;
+    color: var(--green);
+    margin-left: 6px;
+  }
+
+  /* Guide Details */
+  .sync-guide {
+    margin-top: 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .sync-guide summary {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--bg);
+    user-select: none;
+  }
+
+  .sync-guide summary:hover { background: #eee; }
+
+  .sync-guide .guide-content {
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text-light);
+  }
+
+  .sync-guide .guide-content ol {
+    padding-left: 20px;
+  }
+
+  .sync-guide .guide-content code {
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .summary { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr 1fr; }
+    .form-row-2 { grid-template-columns: 1fr; }
+    .btn-add { width: 100%; }
+    .tx-table th, .tx-table td { padding: 10px 12px; font-size: 13px; }
+    .chart-bar { width: 24px; }
+    header { flex-direction: column; gap: 12px; }
+    .settings-row { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Airbnb 월별 가계부</h1>
+  <div class="month-nav">
+    <button id="prevMonth" title="이전 달">&#8249;</button>
+    <span id="currentMonth"></span>
+    <button id="nextMonth" title="다음 달">&#8250;</button>
+  </div>
+  <button class="btn-settings" id="btnSettings" title="설정">&#9881;</button>
+</header>
+
+<div class="container">
+  <!-- Settings Panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <h2>Google Sheets 연동 설정</h2>
+    <div class="form-group">
+      <label>Google Sheet URL 또는 ID</label>
+      <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/... 또는 Sheet ID">
+    </div>
+    <div class="settings-row">
+      <label class="checkbox-label">
+        <input type="checkbox" id="autoSync">
+        페이지 로드 시 자동 동기화
+      </label>
+      <button class="btn-sync" id="btnSync">동기화</button>
+    </div>
+    <div class="sync-status" id="syncStatus"></div>
+    <details class="sync-guide">
+      <summary>연동 설정 가이드</summary>
+      <div class="guide-content">
+        <ol>
+          <li>Google Sheets에서 시트를 만듭니다. 시트 이름은 <code>Bookings</code>로 설정하세요.</li>
+          <li>열 구조 (A~C): <code>email_subject</code>, <code>email_date</code>, <code>email_body</code></li>
+          <li>Zapier에서 네이버웍스 IMAP 트리거 → Google Sheets 행 추가 Zap을 만듭니다.</li>
+          <li><strong>파일 → 공유 → 웹에 게시</strong>를 클릭하여 시트를 웹에 게시합니다.</li>
+          <li>위 입력란에 Google Sheet URL을 붙여넣고 "동기화" 버튼을 클릭하세요.</li>
+          <li>앱이 이메일 본문을 자동 파싱하여 수입(정산금)과 지출(수수료) 거래를 생성합니다.</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-card income">
+      <div class="label">수입</div>
+      <div class="value" id="totalIncome">₩0</div>
+    </div>
+    <div class="summary-card expense">
+      <div class="label">지출</div>
+      <div class="value" id="totalExpense">₩0</div>
+    </div>
+    <div class="summary-card net">
+      <div class="label">순이익</div>
+      <div class="value" id="netProfit">₩0</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-section">
+    <h2>최근 6개월 추이</h2>
+    <div class="chart" id="chart"></div>
+    <div class="chart-legend">
+      <span class="leg-income">수입</span>
+      <span class="leg-expense">지출</span>
+    </div>
+  </div>
+
+  <!-- Add Transaction -->
+  <div class="add-section">
+    <h2>거래 추가</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>날짜</label>
+        <input type="date" id="txDate">
+      </div>
+      <div class="form-group">
+        <label>유형</label>
+        <select id="txType">
+          <option value="income">수입</option>
+          <option value="expense">지출</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>카테고리</label>
+        <select id="txCategory"></select>
+      </div>
+      <div class="form-group">
+        <label>금액 (₩)</label>
+        <input type="number" id="txAmount" min="0" placeholder="0">
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>메모 (선택)</label>
+        <input type="text" id="txNote" placeholder="메모를 입력하세요">
+      </div>
+      <button class="btn-add" id="btnAdd">추가</button>
+    </div>
+  </div>
+
+  <!-- Transaction List -->
+  <div class="list-section">
+    <div class="list-header" id="listHeader">거래 내역</div>
+    <div id="txList"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'airbnb_budget_transactions';
+
+  const CATEGORIES = {
+    income: ['숙박요금', '청소요금'],
+    expense: ['청소요금', '임대료 및 관리비', '공과금', '에어비앤비 수수료', '기타용품']
+  };
+
+  const SETTINGS_KEY = 'airbnb_sync_settings';
+
+  let currentDate = new Date();
+  let currentYear = currentDate.getFullYear();
+  let currentMonth = currentDate.getMonth(); // 0-indexed
+
+  // --- Data ---
+  function loadTransactions() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveTransactions(txs) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(txs));
+  }
+
+  function getMonthKey(y, m) {
+    return `${y}-${String(m + 1).padStart(2, '0')}`;
+  }
+
+  function filterByMonth(txs, y, m) {
+    const key = getMonthKey(y, m);
+    return txs.filter(tx => tx.date.startsWith(key));
+  }
+
+  function formatCurrency(n) {
+    return '₩' + n.toLocaleString('ko-KR');
+  }
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+
+  // --- Settings ---
+  function loadSettings() {
+    try {
+      return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveSettings(settings) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }
+
+  function extractSheetId(url) {
+    if (!url) return null;
+    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+    if (match) return match[1];
+    // If it's already just an ID (no slashes)
+    if (/^[a-zA-Z0-9-_]+$/.test(url.trim())) return url.trim();
+    return null;
+  }
+
+  // --- Google Sheets Fetch (JSONP to avoid CORS) ---
+  function fetchSheetData(sheetId) {
+    const cb = '_gviz_' + Date.now();
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${cb}&sheet=Bookings`;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => { cleanup(); reject(new Error('요청 시간 초과')); }, 15000);
+      const script = document.createElement('script');
+      function cleanup() {
+        clearTimeout(timer);
+        delete window[cb];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function(data) {
+        cleanup();
+        if (data.status === 'error') { reject(new Error(data.errors?.[0]?.detailed_message || '시트 오류')); return; }
+        resolve(data.table);
+      };
+      script.src = url;
+      script.onerror = function() { cleanup(); reject(new Error('스크립트 로드 실패')); };
+      document.head.appendChild(script);
+    });
+  }
+
+  function parseSheetRows(table) {
+    const cols = table.cols.map(c => c.label.trim().toLowerCase());
+    return table.rows.map(row => {
+      const obj = {};
+      row.c.forEach((cell, i) => {
+        if (cols[i]) obj[cols[i]] = cell ? cell.v : null;
+      });
+      return obj;
+    });
+  }
+
+  // --- Email Body Parser ---
+  function parseEmailBody(row) {
+    const subject = row.email_subject || '';
+    const body = row.email_body || '';
+    if (!body) return null;
+
+    // Confirmation code: "Confirmation code\nHM2YCYXW8J"
+    const codeMatch = body.match(/Confirmation code\s*([A-Z0-9]+)/i);
+    if (!codeMatch) return null;
+    const booking_id = codeMatch[1];
+
+    // Guest name from subject: "Reservation confirmed - 규빈 김 arrives Feb 8"
+    const nameMatch = subject.match(/confirmed\s*[-–]\s*(.+?)\s+arrives/i);
+    const guest_name = nameMatch ? nameMatch[1].trim() : '';
+
+    // Year from email_date (handles gviz "Date(2026,1,6)" and "2026-02-06" formats)
+    let year = new Date().getFullYear();
+    if (row.email_date) {
+      const ym = String(row.email_date).match(/(\d{4})/);
+      if (ym) year = parseInt(ym[1]);
+    }
+
+    // Month abbreviation → number
+    const MONTHS = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',
+                    Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+
+    // Extract date from "Check-in\nSun, Feb 8" or "Checkout\nMon, Feb 9"
+    function toDate(label) {
+      const re = new RegExp(label + '\\s+\\w+,\\s*(\\w{3})\\s+(\\d{1,2})');
+      const m = body.match(re);
+      if (!m || !MONTHS[m[1]]) return null;
+      const mo = MONTHS[m[1]], day = m[2].padStart(2, '0');
+      let y = year;
+      // Year boundary: email in Nov/Dec, check-in in Jan/Feb → next year
+      if (row.email_date) {
+        const es = String(row.email_date);
+        const emm = es.match(/Date\(\d+,(\d+)/) || es.match(/-(\d{2})-/);
+        if (emm) {
+          const em = es.includes('Date(') ? parseInt(emm[1]) + 1 : parseInt(emm[1]);
+          if (em >= 11 && parseInt(mo) <= 2) y = year + 1;
+        }
+      }
+      return `${y}-${mo}-${day}`;
+    }
+
+    const check_in = toDate('Check-in');
+    const check_out = toDate('Checkout');
+
+    // Nights: "₩30,000 x 1 night"
+    const nightsMatch = body.match(/x\s*(\d+)\s*night/i);
+    const nights = nightsMatch ? parseInt(nightsMatch[1]) : 1;
+
+    // Nightly rate: "₩30,000 x 1 night"
+    const rateMatch = body.match(/₩([\d,]+)\s*x\s*\d+\s*night/);
+    const nightly_rate = rateMatch ? parseInt(rateMatch[1].replace(/,/g, '')) : 0;
+
+    // Cleaning fee: "cleaning fee\n₩35,000"
+    const cleanMatch = body.match(/cleaning fee\s*₩([\d,]+)/i);
+    const cleaning_fee = cleanMatch ? parseInt(cleanMatch[1].replace(/,/g, '')) : 0;
+
+    // Host service fee: "Host service fee (3.0% + VAT)\n-₩2,145"
+    const feeMatch = body.match(/Host service fee[^₩]*₩([\d,]+)/i);
+    const service_fee = feeMatch ? parseInt(feeMatch[1].replace(/,/g, '')) : 0;
+
+    // Total payout: "You earn\n₩62,855"
+    const earnMatch = body.match(/You earn\s*₩([\d,]+)/i);
+    const total_payout = earnMatch ? parseInt(earnMatch[1].replace(/,/g, '')) : 0;
+
+    return {
+      booking_id, guest_name, check_in, check_out, nights,
+      nightly_rate, cleaning_fee, service_fee, total_payout
+    };
+  }
+
+  function bookingsToTransactions(bookings) {
+    const txs = [];
+    for (const b of bookings) {
+      if (!b.booking_id) continue;
+
+      const date = b.check_in;
+      if (!date) continue;
+
+      const room = (b.nightly_rate || 0) * (b.nights || 1);
+      const clean = b.cleaning_fee || 0;
+      const fee = b.service_fee || 0;
+      const guestNote = `${b.guest_name || ''} (${b.nights || '?'}박)`.trim();
+
+      if (room > 0) {
+        txs.push({
+          id: `airbnb_${b.booking_id}_room`,
+          date, type: 'income', category: '숙박요금',
+          amount: room, note: guestNote, source: 'airbnb_sync'
+        });
+      }
+      if (clean > 0) {
+        txs.push({
+          id: `airbnb_${b.booking_id}_clean`,
+          date, type: 'income', category: '청소요금',
+          amount: clean, note: guestNote, source: 'airbnb_sync'
+        });
+      }
+      if (fee > 0) {
+        txs.push({
+          id: `airbnb_${b.booking_id}_fee`,
+          date, type: 'expense', category: '에어비앤비 수수료',
+          amount: fee, note: `${b.guest_name || ''} 수수료`.trim(), source: 'airbnb_sync'
+        });
+      }
+      // 청소 지출 (기본 ₩40,000, 수정 가능)
+      txs.push({
+        id: `airbnb_${b.booking_id}_clean_exp`,
+        date, type: 'expense', category: '청소요금',
+        amount: 40000, note: guestNote, source: 'airbnb_clean_expense'
+      });
+    }
+    return txs;
+  }
+
+  // --- Merge ---
+  function mergeTransactions(existing, synced) {
+    const idSet = new Set(existing.map(tx => tx.id));
+    let newCount = 0;
+    for (const tx of synced) {
+      if (!idSet.has(tx.id)) {
+        existing.push(tx);
+        newCount++;
+      }
+    }
+    return newCount;
+  }
+
+  // --- Monthly Rent Auto-generation ---
+  function generateMonthlyRent() {
+    const txs = loadTransactions();
+    const now = new Date();
+    // Find earliest transaction month, or current month
+    let startY = now.getFullYear(), startM = now.getMonth();
+    txs.forEach(tx => {
+      if (tx.date) {
+        const [y, m] = tx.date.split('-').map(Number);
+        if (y < startY || (y === startY && m - 1 < startM)) { startY = y; startM = m - 1; }
+      }
+    });
+    const idSet = new Set(txs.map(tx => tx.id));
+    let y = startY, m = startM, added = 0;
+    while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())) {
+      // 당월은 22일이 지나야 임대료 반영
+      if (y === now.getFullYear() && m === now.getMonth() && now.getDate() < 22) break;
+      const mo = String(m + 1).padStart(2, '0');
+      const id = `auto_rent_${y}_${mo}`;
+      if (!idSet.has(id)) {
+        txs.push({ id, date: `${y}-${mo}-22`, type: 'expense', category: '임대료 및 관리비',
+          amount: 1250000, note: '월 임대료 및 관리비', source: 'auto_rent' });
+        added++;
+      }
+      m++;
+      if (m > 11) { m = 0; y++; }
+    }
+    if (added > 0) saveTransactions(txs);
+  }
+
+  // --- Edit transaction amount ---
+  function editTxAmount(id) {
+    const txs = loadTransactions();
+    const tx = txs.find(t => t.id === id);
+    if (!tx) return;
+    const input = prompt(`금액 수정 (현재: ₩${tx.amount.toLocaleString()})`, tx.amount);
+    if (input === null) return;
+    const val = parseInt(input.replace(/,/g, ''), 10);
+    if (!val || val <= 0) { alert('올바른 금액을 입력하세요.'); return; }
+    tx.amount = val;
+    saveTransactions(txs);
+    render();
+  }
+
+  // --- Sync Execution ---
+  async function syncFromGoogleSheets() {
+    const elStatus = document.getElementById('syncStatus');
+    const btnSync = document.getElementById('btnSync');
+    const elSheetUrl = document.getElementById('sheetUrl');
+
+    const sheetId = extractSheetId(elSheetUrl.value);
+    if (!sheetId) {
+      elStatus.textContent = '올바른 Google Sheet URL 또는 ID를 입력하세요.';
+      elStatus.className = 'sync-status error';
+      return;
+    }
+
+    // Save settings
+    saveSettings({
+      sheetUrl: elSheetUrl.value,
+      autoSync: document.getElementById('autoSync').checked
+    });
+
+    btnSync.disabled = true;
+    elStatus.textContent = '동기화 중...';
+    elStatus.className = 'sync-status loading';
+
+    try {
+      const table = await fetchSheetData(sheetId);
+      const rawRows = parseSheetRows(table);
+      const bookings = rawRows.map(parseEmailBody).filter(Boolean);
+      const synced = bookingsToTransactions(bookings);
+      const existing = loadTransactions();
+      const newCount = mergeTransactions(existing, synced);
+      saveTransactions(existing);
+      render();
+
+      elStatus.textContent = `완료! ${newCount}개 새 거래 추가 (총 ${synced.length}건 확인)`;
+      elStatus.className = 'sync-status success';
+    } catch (err) {
+      elStatus.textContent = `동기화 실패: ${err.message}`;
+      elStatus.className = 'sync-status error';
+    } finally {
+      btnSync.disabled = false;
+    }
+  }
+
+  // --- UI refs ---
+  const elMonth = document.getElementById('currentMonth');
+  const elTotalIncome = document.getElementById('totalIncome');
+  const elTotalExpense = document.getElementById('totalExpense');
+  const elNetProfit = document.getElementById('netProfit');
+  const elChart = document.getElementById('chart');
+  const elTxList = document.getElementById('txList');
+  const elTxDate = document.getElementById('txDate');
+  const elTxType = document.getElementById('txType');
+  const elTxCategory = document.getElementById('txCategory');
+  const elTxAmount = document.getElementById('txAmount');
+  const elTxNote = document.getElementById('txNote');
+
+  // --- Month nav ---
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    render();
+  });
+
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    render();
+  });
+
+  // --- Category select ---
+  function updateCategories() {
+    const type = elTxType.value;
+    const cats = CATEGORIES[type];
+    elTxCategory.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  elTxType.addEventListener('change', updateCategories);
+  updateCategories();
+
+  // --- Set default date ---
+  function setDefaultDate() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    elTxDate.value = `${yyyy}-${mm}-${dd}`;
+  }
+  setDefaultDate();
+
+  // --- Add transaction ---
+  document.getElementById('btnAdd').addEventListener('click', () => {
+    const date = elTxDate.value;
+    const type = elTxType.value;
+    const category = elTxCategory.value;
+    const amount = parseInt(elTxAmount.value, 10);
+    const note = elTxNote.value.trim();
+
+    if (!date || !amount || amount <= 0) {
+      alert('날짜와 금액을 올바르게 입력해 주세요.');
+      return;
+    }
+
+    const txs = loadTransactions();
+    txs.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      date,
+      type,
+      category,
+      amount,
+      note
+    });
+    saveTransactions(txs);
+
+    // Reset
+    elTxAmount.value = '';
+    elTxNote.value = '';
+    setDefaultDate();
+
+    render();
+  });
+
+  // --- Delete transaction ---
+  function deleteTx(id) {
+    if (!confirm('이 거래를 삭제하시겠습니까?')) return;
+    const txs = loadTransactions().filter(tx => tx.id !== id);
+    saveTransactions(txs);
+    render();
+  }
+
+  // --- Render ---
+  function render() {
+    const allTx = loadTransactions();
+
+    // Month label
+    const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+    elMonth.textContent = `${currentYear}년 ${monthNames[currentMonth]}`;
+
+    // Filter
+    const monthTx = filterByMonth(allTx, currentYear, currentMonth);
+    monthTx.sort((a, b) => b.date.localeCompare(a.date));
+
+    // Totals
+    let totalIncome = 0, totalExpense = 0;
+    monthTx.forEach(tx => {
+      if (tx.type === 'income') totalIncome += tx.amount;
+      else totalExpense += tx.amount;
+    });
+    const net = totalIncome - totalExpense;
+
+    elTotalIncome.textContent = formatCurrency(totalIncome);
+    elTotalExpense.textContent = formatCurrency(totalExpense);
+    elNetProfit.textContent = (net >= 0 ? '+' : '') + formatCurrency(net);
+    elNetProfit.className = 'value ' + (net >= 0 ? 'positive' : 'negative');
+
+    // Chart — last 6 months
+    renderChart(allTx);
+
+    // Transaction list
+    renderList(monthTx);
+  }
+
+  function renderChart(allTx) {
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      let y = currentYear, m = currentMonth - i;
+      while (m < 0) { m += 12; y--; }
+      months.push({ y, m });
+    }
+
+    const data = months.map(({ y, m }) => {
+      const txs = filterByMonth(allTx, y, m);
+      let income = 0, expense = 0;
+      txs.forEach(tx => {
+        if (tx.type === 'income') income += tx.amount;
+        else expense += tx.amount;
+      });
+      return { label: `${m + 1}월`, income, expense };
+    });
+
+    const maxVal = Math.max(1, ...data.map(d => Math.max(d.income, d.expense)));
+
+    elChart.innerHTML = data.map(d => {
+      const ih = Math.max(4, (d.income / maxVal) * 140);
+      const eh = Math.max(4, (d.expense / maxVal) * 140);
+      return `
+        <div class="chart-bar-group">
+          <div class="chart-bars">
+            <div class="chart-bar income-bar" style="height:${ih}px" title="수입: ${formatCurrency(d.income)}"></div>
+            <div class="chart-bar expense-bar" style="height:${eh}px" title="지출: ${formatCurrency(d.expense)}"></div>
+          </div>
+          <div class="chart-label">${d.label}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderList(txs) {
+    if (txs.length === 0) {
+      elTxList.innerHTML = '<div class="empty-state">이번 달 거래 내역이 없습니다.</div>';
+      return;
+    }
+
+    let html = `
+      <table class="tx-table">
+        <thead>
+          <tr>
+            <th>날짜</th>
+            <th>유형</th>
+            <th>카테고리</th>
+            <th>금액</th>
+            <th>메모</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    txs.forEach(tx => {
+      const isAuto = tx.source && tx.source !== '';
+      const badge = isAuto ? '<span class="badge-auto">자동</span>' : '';
+      let actionBtn = '';
+      if (tx.source === 'airbnb_clean_expense') {
+        actionBtn = `<button class="btn-edit" onclick="window.__editTxAmount('${tx.id}')">수정</button>`;
+      } else if (!isAuto) {
+        actionBtn = `<button class="btn-delete" onclick="window.__deleteTx('${tx.id}')">&times;</button>`;
+      }
+      html += `
+          <tr>
+            <td>${formatDate(tx.date)}</td>
+            <td><span class="tx-type ${tx.type}">${tx.type === 'income' ? '수입' : '지출'}</span>${badge}</td>
+            <td>${tx.category}</td>
+            <td class="tx-amount ${tx.type}">${(tx.type === 'expense' ? '-' : '+') + formatCurrency(tx.amount)}</td>
+            <td>${tx.note || '-'}</td>
+            <td>${actionBtn}</td>
+          </tr>`;
+    });
+
+    html += '</tbody></table>';
+    elTxList.innerHTML = html;
+  }
+
+  // Expose handlers
+  window.__deleteTx = deleteTx;
+  window.__editTxAmount = editTxAmount;
+
+  // --- Settings panel toggle ---
+  document.getElementById('btnSettings').addEventListener('click', () => {
+    document.getElementById('settingsPanel').classList.toggle('open');
+  });
+
+  // --- Sync button ---
+  document.getElementById('btnSync').addEventListener('click', syncFromGoogleSheets);
+
+  // --- Load saved settings ---
+  const savedSettings = loadSettings();
+  if (savedSettings.sheetUrl) {
+    document.getElementById('sheetUrl').value = savedSettings.sheetUrl;
+  }
+  if (savedSettings.autoSync) {
+    document.getElementById('autoSync').checked = true;
+  }
+
+  // --- Save settings on change ---
+  document.getElementById('sheetUrl').addEventListener('change', () => {
+    saveSettings({
+      sheetUrl: document.getElementById('sheetUrl').value,
+      autoSync: document.getElementById('autoSync').checked
+    });
+  });
+  document.getElementById('autoSync').addEventListener('change', () => {
+    saveSettings({
+      sheetUrl: document.getElementById('sheetUrl').value,
+      autoSync: document.getElementById('autoSync').checked
+    });
+  });
+
+  // Generate monthly rent & initial render
+  generateMonthlyRent();
+  render();
+
+  // --- Auto sync on load ---
+  if (savedSettings.autoSync && savedSettings.sheetUrl) {
+    syncFromGoogleSheets();
+  }
+})();
+</script>
+</body>
+</html>
