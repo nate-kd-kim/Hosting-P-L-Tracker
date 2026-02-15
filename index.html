@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#ff385c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -32,18 +32,23 @@
     color: var(--text);
     line-height: 1.5;
     min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   header {
     background: var(--card);
     border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
+    padding: 16px max(24px, calc((100% - 900px) / 2 + 24px));
+    padding-top: max(16px, env(safe-area-inset-top));
     display: flex;
     align-items: center;
     justify-content: space-between;
     position: sticky;
     top: 0;
     z-index: 100;
+    transition: box-shadow 0.2s;
   }
 
   header h1 {
@@ -84,6 +89,7 @@
 
   .container {
     max-width: 900px;
+    width: 100%;
     margin: 0 auto;
     padding: 24px 16px;
   }
@@ -101,6 +107,28 @@
     border-radius: var(--radius);
     padding: 20px;
     box-shadow: var(--shadow);
+    border-left: 4px solid transparent;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+
+  .summary-card.income {
+    border-left-color: var(--green);
+    background: linear-gradient(135deg, #f0faf9 0%, white 100%);
+  }
+
+  .summary-card.expense {
+    border-left-color: var(--red);
+    background: linear-gradient(135deg, #fff5f7 0%, white 100%);
+  }
+
+  .summary-card.net {
+    border-left-color: var(--primary);
+    background: linear-gradient(135deg, #f8f0ff 0%, white 100%);
   }
 
   .summary-card .label {
@@ -137,9 +165,10 @@
   .chart {
     display: flex;
     align-items: flex-end;
-    gap: 24px;
-    height: 180px;
-    justify-content: center;
+    gap: 16px;
+    height: 200px;
+    justify-content: space-evenly;
+    overflow-x: auto;
   }
 
   .chart-bar-group {
@@ -147,6 +176,9 @@
     flex-direction: column;
     align-items: center;
     gap: 6px;
+    flex: 1;
+    max-width: 100px;
+    min-width: 0;
   }
 
   .chart-bars {
@@ -160,8 +192,22 @@
     width: 36px;
     border-radius: 6px 6px 0 0;
     min-height: 4px;
-    transition: height 0.4s ease;
+    flex-shrink: 0;
+    transition: height 0.4s ease, opacity 0.15s;
   }
+
+  .chart-bar:hover { opacity: 0.8; }
+
+  .chart-value-label {
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .chart-value-label.income-label { color: var(--green); }
+  .chart-value-label.expense-label { color: var(--red); }
 
   .chart-bar.income-bar { background: var(--green); }
   .chart-bar.expense-bar { background: var(--red); }
@@ -243,6 +289,8 @@
   .form-group input:focus,
   .form-group select:focus {
     border-color: var(--primary);
+    background: #fff8f9;
+    box-shadow: 0 0 0 3px rgba(255,56,92,0.08);
   }
 
   .btn-add {
@@ -296,7 +344,7 @@
   }
 
   .tx-table td {
-    padding: 12px 16px;
+    padding: 14px 16px;
     font-size: 14px;
     border-bottom: 1px solid #f0f0f0;
     white-space: nowrap;
@@ -305,7 +353,8 @@
   .tx-table tr:last-child td { border-bottom: none; }
 
   .tx-table tr { transition: background 0.1s; }
-  .tx-table tr:hover { background: #f8f9fa; }
+  .tx-table tbody tr:nth-child(even) { background: #fafafa; }
+  .tx-table tr:hover { background: #f0f4ff; }
 
   .tx-table .col-date { color: var(--text-light); font-size: 13px; font-variant-numeric: tabular-nums; }
   .tx-table .col-amount { text-align: right; font-variant-numeric: tabular-nums; font-size: 14px; }
@@ -698,8 +747,12 @@
   .period-summary .ps-value.negative { color: var(--red); }
 
   @media (max-width: 700px) {
-    .period-summary { grid-template-columns: 1fr; }
+    .period-summary { grid-template-columns: repeat(3, 1fr); }
     .cumulative-bar { flex-direction: column; gap: 8px; text-align: center; }
+  }
+
+  @media (max-width: 480px) {
+    .period-summary { grid-template-columns: 1fr; }
   }
 
   /* Guide Details */
@@ -875,14 +928,26 @@
 
   .filter-bar .btn-filter-clear:hover { border-color: var(--primary); color: var(--primary); }
 
-  /* Responsive */
+  /* Responsive - Tablet */
+  @media (max-width: 900px) {
+    .form-row { grid-template-columns: 1fr 1fr 1fr; }
+    .chart { gap: 12px; }
+    .chart-bar { width: 30px; }
+    .summary { gap: 12px; }
+  }
+
+  /* Responsive - Mobile */
   @media (max-width: 700px) {
-    .summary { grid-template-columns: 1fr; }
+    .summary { grid-template-columns: 1fr 1fr; }
+    .summary-card.net { grid-column: 1 / -1; }
     .form-row { grid-template-columns: 1fr 1fr; }
     .form-row-2 { grid-template-columns: 1fr; }
     .btn-add { width: 100%; }
-    .chart-bar { width: 24px; }
-    header { flex-direction: column; gap: 12px; }
+    .chart { gap: 8px; height: 170px; }
+    .chart-bar { width: 20px; }
+    .chart-bars { height: 120px; }
+    .chart-value-label { font-size: 9px; }
+    header { flex-direction: column; gap: 12px; padding: 16px 16px; }
     .settings-row { flex-direction: column; align-items: flex-start; }
 
     /* Mobile: horizontal scroll table */
@@ -897,6 +962,13 @@
     .filter-bar { flex-wrap: wrap; }
     .filter-bar input[type="text"] { flex: 1 1 100%; }
     .filter-bar select { flex: 1; }
+  }
+
+  /* Responsive - Small Mobile */
+  @media (max-width: 480px) {
+    .summary { grid-template-columns: 1fr; }
+    .summary-card.net { grid-column: auto; }
+    .period-summary { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -1930,14 +2002,27 @@
 
     const maxVal = Math.max(1, ...data.map(d => Math.max(d.income, d.expense)));
 
+    function shortAmount(v) {
+      if (v === 0) return '';
+      if (v >= 10000) return Math.round(v / 10000) + '만';
+      if (v >= 1000) return Math.round(v / 1000) + '천';
+      return String(v);
+    }
+
     elChart.innerHTML = data.map(d => {
       const ih = Math.max(4, (d.income / maxVal) * 140);
       const eh = Math.max(4, (d.expense / maxVal) * 140);
       return `
         <div class="chart-bar-group">
           <div class="chart-bars">
-            <div class="chart-bar income-bar" style="height:${ih}px" title="수입: ${formatCurrency(d.income)}"></div>
-            <div class="chart-bar expense-bar" style="height:${eh}px" title="지출: ${formatCurrency(d.expense)}"></div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <span class="chart-value-label income-label">${shortAmount(d.income)}</span>
+              <div class="chart-bar income-bar" style="height:${ih}px" title="수입: ${formatCurrency(d.income)}"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center">
+              <span class="chart-value-label expense-label">${shortAmount(d.expense)}</span>
+              <div class="chart-bar expense-bar" style="height:${eh}px" title="지출: ${formatCurrency(d.expense)}"></div>
+            </div>
           </div>
           <div class="chart-label">${d.label}</div>
         </div>`;
@@ -2472,6 +2557,12 @@
       autoSync: document.getElementById('autoSync').checked
     });
   });
+
+  // Header scroll shadow
+  window.addEventListener('scroll', function() {
+    const h = document.querySelector('header');
+    h.style.boxShadow = window.scrollY > 0 ? '0 2px 12px rgba(0,0,0,0.1)' : 'none';
+  }, { passive: true });
 
   // Generate auto entries & initial render
   updateSheetLink();
