@@ -1,18 +1,20 @@
-# 에어비앤비 가계부 — 자동화 설정 가이드
+# 숙소 가계부 — 자동화 설정 가이드
 
 ## 전체 파이프라인
 
 ```
-에어비앤비 → 예약 확인 이메일 (네이버웍스)
+Airbnb / Agoda / Booking.com → 예약 확인 이메일 (네이버웍스)
     ↓
 Zapier 무료 (2스텝) → 이메일 감지 → Google Sheets에 원본 저장
     ↓
 Google Sheets (Bookings 시트, 3열: 제목/날짜/본문)
     ↓
-가계부 앱 JS → 이메일 본문 정규식 파싱 → 수입/지출 거래 생성
+가계부 앱 JS → OTA 자동 감지 → 이메일 파싱 → 수입/지출 거래 생성
 ```
 
 > **핵심**: Zapier는 이메일을 시트에 그대로 전달만 하고, 파싱은 가계부 앱 JavaScript에서 수행합니다. 무료 플랜(2스텝)으로 충분합니다.
+>
+> **지원 OTA**: Airbnb, Agoda, Booking.com, 삼삼엠투(1회 수동 입력 완료)
 
 ---
 
@@ -74,8 +76,10 @@ https://docs.google.com/spreadsheets/d/여기가_시트ID/edit...
 ### B-3. 네이버웍스 자동 전달 설정 (Email by Zapier 사용 시)
 
 1. 네이버웍스 메일 → **설정** → **메일 필터/전달 규칙**
-2. 새 규칙 생성:
-   - **조건**: 보낸 사람이 `automated@airbnb.com` 포함
+2. 새 규칙 생성 (OTA별):
+   - **Airbnb**: 보낸 사람이 `automated@airbnb.com` 포함
+   - **Agoda**: 보낸 사람이 `no-reply@agoda.com` 포함
+   - **Booking.com**: 보낸 사람이 `noreply@booking.com` 또는 `noreply@mailer.booking.com` 포함
    - **동작**: Zapier 전용 이메일 주소로 전달
 3. 규칙 저장
 
@@ -92,7 +96,9 @@ https://docs.google.com/spreadsheets/d/여기가_시트ID/edit...
 |-----------|-------------|
 | email_subject | 트리거의 `Subject` |
 | email_date | 트리거의 `Date` (또는 `Received At`) |
-| email_body | 트리거의 `Body Plain` |
+| email_body | 트리거의 `Body Plain` (또는 Agoda 대응 시 `Body HTML`) |
+
+> **Agoda 참고**: Agoda 이메일은 HTML-only입니다. Agoda 동기화를 위해 Body 매핑을 `Body Plain` 대신 `Body HTML` 또는 `Body`로 변경하세요. Airbnb는 두 매핑 모두 호환됩니다.
 
 ### B-5. 테스트 & 활성화
 
@@ -111,18 +117,37 @@ https://docs.google.com/spreadsheets/d/여기가_시트ID/edit...
 
 ### 앱이 이메일에서 자동 추출하는 항목
 
+#### Airbnb
+
 | 항목 | 이메일 내 패턴 | 예시 |
 |------|---------------|------|
 | 예약 코드 | `Confirmation code` 다음 줄 | `HM2YCYXW8J` |
 | 게스트 이름 | 제목: `confirmed - OOO arrives` | `규빈 김` |
 | 체크인 | `Check-in` 다음의 날짜 | `Feb 8` |
 | 체크아웃 | `Checkout` 다음의 날짜 | `Feb 9` |
-| 숙박일수 | `x N night` | `1` |
 | 1박 요금 | `₩OOO x N night` | `₩30,000` |
-| 청소비 | `cleaning fee ₩OOO` | `₩35,000` |
-| 호스트 수수료 | `Host service fee ... ₩OOO` | `₩2,145` |
 | **정산금** | `You earn ₩OOO` | **`₩62,855`** → 수입 거래 |
 | **수수료** | `Host service fee ... ₩OOO` | **`₩2,145`** → 지출 거래 |
+
+#### Agoda (HTML 파싱, Element ID 기반)
+
+| 항목 | HTML Element ID | 예시 |
+|------|----------------|------|
+| 예약 번호 | `ltrBookingIDValue` | `1688376481` |
+| 게스트명 | `ltrCustomerFirstNameValue` + `ltrCustomerLastNameValue` | `Adrian Paul Lim` |
+| 체크인 | `lblCustomerArrival` | `April 7, 2026` |
+| 체크아웃 | `lblCustomerDeparture` | `April 10, 2026` |
+| **정산금** | `lblAmountPayableData` (Net Rate) | **`KRW 348,800`** |
+| **수수료** | `referenceCommissionLabel` 행 | **`KRW 61,200`** → 지출 거래 |
+| 청소비 | "Cleaning Service Fee" 행 | `KRW 50,000` |
+
+#### Booking.com (제목에서만 추출)
+
+| 항목 | 제목 패턴 | 예시 |
+|------|----------|------|
+| 예약 번호 | `(숫자, ...)` | `6309203132` |
+| 체크인 | `YYYY년 M월 D일` | `2026년 4월 8일` |
+| 금액 | 이메일에 없음 → ₩0 플레이스홀더 | 사용자 수동 입력 |
 
 ---
 

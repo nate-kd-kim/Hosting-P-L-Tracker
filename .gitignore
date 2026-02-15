@@ -1,0 +1,6 @@
+_temp_cancel/
+_temp_eml/
+eml/
+*.zip
+*.eml
+nul

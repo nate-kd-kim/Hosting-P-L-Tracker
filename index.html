@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Airbnb 월별 가계부</title>
+<meta name="theme-color" content="#ff385c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="숙소 가계부">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23ff385c'/%3E%3Ctext x='90' y='128' font-size='120' text-anchor='middle' fill='white'%3E%EF%BF%A5%3C/text%3E%3C/svg%3E">
+<title>숙소 월별 가계부</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -205,7 +210,7 @@
 
   .form-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     gap: 12px;
     margin-bottom: 12px;
   }
@@ -279,53 +284,76 @@
 
   .tx-table th {
     text-align: left;
-    padding: 10px 24px;
-    font-size: 12px;
+    padding: 10px 16px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-light);
-    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-bottom: 2px solid var(--border);
     background: var(--bg);
+    white-space: nowrap;
   }
 
   .tx-table td {
-    padding: 14px 24px;
+    padding: 12px 16px;
     font-size: 14px;
     border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap;
   }
 
   .tx-table tr:last-child td { border-bottom: none; }
 
-  .tx-table tr:hover { background: #fafafa; }
+  .tx-table tr { transition: background 0.1s; }
+  .tx-table tr:hover { background: #f8f9fa; }
+
+  .tx-table .col-date { color: var(--text-light); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .tx-table .col-amount { text-align: right; font-variant-numeric: tabular-nums; font-size: 14px; }
+  .tx-table th.col-amount { text-align: right; }
+  .tx-table .col-action { text-align: center; width: 56px; }
 
   .tx-type {
     display: inline-block;
-    padding: 2px 10px;
-    border-radius: 20px;
+    padding: 3px 10px;
+    border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
+    white-space: nowrap;
   }
 
   .tx-type.income { background: #e6f7f5; color: var(--green); }
   .tx-type.expense { background: #fff0f3; color: var(--red); }
 
-  .tx-amount.income { color: var(--green); font-weight: 600; }
-  .tx-amount.expense { color: var(--red); font-weight: 600; }
+  .tx-amount.income { color: var(--green); font-weight: 700; }
+  .tx-amount.expense { color: var(--red); font-weight: 700; }
 
-  .btn-delete {
-    background: none;
-    border: none;
-    color: var(--text-light);
-    cursor: pointer;
-    font-size: 18px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: color 0.15s, background 0.15s;
+  /* Tooltip for memo */
+  .tx-row-with-note { cursor: default; }
+  .tx-row-with-note .col-cat { position: relative; overflow: visible; }
+  .tx-tooltip {
+    display: none;
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 4px);
+    background: var(--text);
+    color: white;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 110;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
-
-  .btn-delete:hover {
-    color: var(--red);
-    background: #fff0f3;
+  .tx-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 16px;
+    border: 5px solid transparent;
+    border-top-color: var(--text);
   }
+  .tx-row-with-note:hover .tx-tooltip { display: block; }
 
   .btn-edit {
     background: none;
@@ -333,9 +361,10 @@
     color: var(--text-light);
     cursor: pointer;
     font-size: 12px;
-    padding: 2px 10px;
-    border-radius: 4px;
-    transition: color 0.15s, background 0.15s;
+    padding: 3px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: all 0.15s;
   }
 
   .btn-edit:hover {
@@ -368,6 +397,32 @@
   }
 
   .btn-settings:hover { background: var(--bg); }
+
+  /* Sheet Link Button */
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-sheet-link {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--green);
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .btn-sheet-link.visible { display: flex; }
+  .btn-sheet-link:hover { background: #e6f7f5; border-color: var(--green); }
 
   /* Settings Panel */
   .settings-panel {
@@ -467,6 +522,186 @@
     margin-left: 6px;
   }
 
+  /* OTA Badges */
+  .badge-ota {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: -0.2px;
+  }
+
+  .badge-airbnb { background: #fff0f3; color: #e0294a; }
+  .badge-agoda { background: #eef3ff; color: #3b5998; }
+  .badge-booking { background: #e8f0fe; color: #003580; }
+  .badge-samsam { background: #fff8e1; color: #e65100; }
+
+  /* Booking.com placeholder (₩0) */
+  .tx-placeholder { background: #fffdf5; }
+  .tx-placeholder td { color: var(--text-light); }
+  .btn-edit-placeholder {
+    background: #003580;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .btn-edit-placeholder:hover { opacity: 0.85; }
+
+  /* List header & bulk delete */
+  .list-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 10px;
+  }
+
+  .list-header-row .list-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .btn-bulk-delete {
+    display: none;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-bulk-delete.visible { display: inline-block; }
+  .btn-bulk-delete:hover { opacity: 0.85; }
+
+  /* Checkbox column */
+  .tx-table th.col-check,
+  .tx-table td.col-check {
+    width: 32px;
+    text-align: center;
+    padding-left: 12px;
+    padding-right: 0;
+  }
+
+  .tx-table td.col-check input[type="checkbox"],
+  .tx-table th.col-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+
+  /* Cumulative & Period Query */
+  .cumulative-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+
+  .cumulative-bar .cum-label {
+    color: var(--text-light);
+    font-size: 13px;
+    margin-right: 8px;
+  }
+
+  .cumulative-bar .cum-value {
+    font-weight: 700;
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cumulative-bar .cum-value.positive { color: var(--green); }
+  .cumulative-bar .cum-value.negative { color: var(--red); }
+
+  .btn-period-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-period-toggle:hover { border-color: var(--green); color: var(--green); }
+  .btn-period-toggle.active { border-color: var(--green); color: var(--green); background: #e6f7f5; }
+
+  .period-section {
+    display: none;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+
+  .period-section.open { display: block; }
+
+  .period-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .period-row input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .period-row input[type="date"]:focus { border-color: var(--primary); }
+
+  .period-row .period-sep { color: var(--text-light); font-size: 14px; }
+
+  .period-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .period-summary .ps-card {
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--bg);
+  }
+
+  .period-summary .ps-label { font-size: 12px; color: var(--text-light); margin-bottom: 2px; }
+  .period-summary .ps-value { font-size: 18px; font-weight: 700; }
+  .period-summary .ps-value.income { color: var(--green); }
+  .period-summary .ps-value.expense { color: var(--red); }
+  .period-summary .ps-value.positive { color: var(--green); }
+  .period-summary .ps-value.negative { color: var(--red); }
+
+  @media (max-width: 700px) {
+    .period-summary { grid-template-columns: 1fr; }
+    .cumulative-bar { flex-direction: column; gap: 8px; text-align: center; }
+  }
+
   /* Guide Details */
   .sync-guide {
     margin-top: 16px;
@@ -504,29 +739,182 @@
     font-size: 12px;
   }
 
+  /* EML Upload */
+  .eml-upload {
+    margin-top: 20px;
+    padding: 20px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .eml-upload.dragover {
+    border-color: var(--green);
+    background: #e6f7f5;
+  }
+
+  .eml-upload h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .eml-upload .upload-hint {
+    display: block;
+    font-size: 13px;
+    color: var(--text-light);
+    margin-top: 8px;
+  }
+
+  .btn-upload {
+    background: var(--text);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-upload:hover { opacity: 0.8; }
+
+  /* Backup */
+  .backup-section {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .backup-section h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .backup-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-backup {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .btn-backup:hover { border-color: var(--green); color: var(--green); }
+
+  .btn-backup.restore {
+    background: none;
+    color: var(--text-light);
+  }
+
+  .btn-backup.restore:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* Filter Bar */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .filter-bar input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .filter-bar input[type="text"]:focus { border-color: var(--primary); }
+
+  .filter-bar select {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    background: var(--card);
+    cursor: pointer;
+  }
+
+  .filter-bar select:focus { border-color: var(--primary); }
+
+  .filter-bar .btn-filter-clear {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .filter-bar .btn-filter-clear:hover { border-color: var(--primary); color: var(--primary); }
+
   /* Responsive */
   @media (max-width: 700px) {
     .summary { grid-template-columns: 1fr; }
     .form-row { grid-template-columns: 1fr 1fr; }
     .form-row-2 { grid-template-columns: 1fr; }
     .btn-add { width: 100%; }
-    .tx-table th, .tx-table td { padding: 10px 12px; font-size: 13px; }
     .chart-bar { width: 24px; }
     header { flex-direction: column; gap: 12px; }
     .settings-row { flex-direction: column; align-items: flex-start; }
+
+    /* Mobile: horizontal scroll table */
+    .list-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .tx-table { min-width: 600px; }
+    .tx-table th, .tx-table td { padding: 10px 12px; font-size: 13px; }
+
+    /* Tooltip → tap hint on mobile */
+    .tx-row-with-note .tx-tooltip { display: none !important; }
+
+    /* Filter bar stacks on mobile */
+    .filter-bar { flex-wrap: wrap; }
+    .filter-bar input[type="text"] { flex: 1 1 100%; }
+    .filter-bar select { flex: 1; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Airbnb 월별 가계부</h1>
+  <h1>숙소 월별 가계부</h1>
   <div class="month-nav">
     <button id="prevMonth" title="이전 달">&#8249;</button>
     <span id="currentMonth"></span>
     <button id="nextMonth" title="다음 달">&#8250;</button>
   </div>
-  <button class="btn-settings" id="btnSettings" title="설정">&#9881;</button>
+  <div class="header-actions">
+    <a class="btn-sheet-link" id="btnSheetLink" target="_blank" rel="noopener" title="Google Sheets 열기">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="10" y1="9" x2="10" y2="9"/></svg>
+    </a>
+    <button class="btn-settings" id="btnSettings" title="설정">&#9881;</button>
+  </div>
 </header>
 
 <div class="container">
@@ -558,6 +946,22 @@
         </ol>
       </div>
     </details>
+    <div class="eml-upload" id="emlUpload">
+      <h3>과거 이메일 일괄 등록</h3>
+      <input type="file" id="emlFiles" multiple accept=".eml" style="display:none">
+      <button class="btn-upload" id="btnUpload">.eml 파일 선택</button>
+      <span class="upload-hint">또는 여기에 .eml 파일 드래그앤드롭</span>
+      <div class="sync-status" id="emlStatus"></div>
+    </div>
+    <div class="backup-section">
+      <h3>데이터 백업 / 복원</h3>
+      <div class="backup-row">
+        <button class="btn-backup" id="btnExport">JSON 내보내기</button>
+        <button class="btn-backup restore" id="btnImport">JSON 복원</button>
+        <input type="file" id="importFile" accept=".json" style="display:none">
+      </div>
+      <div class="sync-status" id="backupStatus"></div>
+    </div>
   </div>
 
   <!-- Summary -->
@@ -576,6 +980,36 @@
     </div>
   </div>
 
+  <!-- Cumulative & Period Query -->
+  <div class="cumulative-bar">
+    <div>
+      <span class="cum-label">누적 순이익</span>
+      <span class="cum-value" id="cumNetProfit">₩0</span>
+    </div>
+    <button class="btn-period-toggle" id="btnPeriodToggle">기간 조회</button>
+  </div>
+  <div class="period-section" id="periodSection">
+    <div class="period-row">
+      <input type="date" id="periodFrom">
+      <span class="period-sep">~</span>
+      <input type="date" id="periodTo">
+    </div>
+    <div class="period-summary" id="periodSummary">
+      <div class="ps-card">
+        <div class="ps-label">기간 수입</div>
+        <div class="ps-value income" id="periodIncome">₩0</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">기간 지출</div>
+        <div class="ps-value expense" id="periodExpense">₩0</div>
+      </div>
+      <div class="ps-card">
+        <div class="ps-label">기간 순이익</div>
+        <div class="ps-value" id="periodNet">₩0</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Chart -->
   <div class="chart-section">
     <h2>최근 6개월 추이</h2>
@@ -591,7 +1025,7 @@
     <h2>거래 추가</h2>
     <div class="form-row">
       <div class="form-group">
-        <label>날짜</label>
+        <label>입실일</label>
         <input type="date" id="txDate">
       </div>
       <div class="form-group">
@@ -602,8 +1036,19 @@
         </select>
       </div>
       <div class="form-group">
+        <label>플랫폼</label>
+        <select id="txPlatform">
+          <option value="">없음</option>
+          <option value="Airbnb">Airbnb</option>
+          <option value="Agoda">Agoda</option>
+          <option value="Booking.com">Booking.com</option>
+          <option value="삼삼엠투">삼삼엠투</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>카테고리</label>
         <select id="txCategory"></select>
+        <input type="text" id="txCategoryCustom" placeholder="카테고리명 입력" style="display:none; margin-top:4px;">
       </div>
       <div class="form-group">
         <label>금액 (₩)</label>
@@ -621,7 +1066,26 @@
 
   <!-- Transaction List -->
   <div class="list-section">
-    <div class="list-header" id="listHeader">거래 내역</div>
+    <div class="list-header-row">
+      <span class="list-title" id="listTitle">거래 내역</span>
+      <button class="btn-bulk-delete" id="btnBulkDelete">선택 삭제</button>
+    </div>
+    <div class="filter-bar" id="filterBar">
+      <input type="text" id="filterSearch" placeholder="검색 (게스트명, 메모, 카테고리...)">
+      <select id="filterOta">
+        <option value="">전체 플랫폼</option>
+        <option value="Airbnb">Airbnb</option>
+        <option value="Agoda">Agoda</option>
+        <option value="Booking.com">Booking.com</option>
+        <option value="삼삼엠투">삼삼엠투</option>
+      </select>
+      <select id="filterType">
+        <option value="">전체 유형</option>
+        <option value="income">수입</option>
+        <option value="expense">지출</option>
+      </select>
+      <button class="btn-filter-clear" id="filterClear">초기화</button>
+    </div>
     <div id="txList"></div>
   </div>
 </div>
@@ -632,7 +1096,7 @@
 
   const CATEGORIES = {
     income: ['숙박요금', '청소요금'],
-    expense: ['청소요금', '임대료 및 관리비', '공과금', '에어비앤비 수수료', '기타용품']
+    expense: ['청소요금', '수수료', '임대료 및 관리비', '공과금', '기타용품']
   };
 
   const SETTINGS_KEY = 'airbnb_sync_settings';
@@ -652,6 +1116,22 @@
 
   function saveTransactions(txs) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(txs));
+  }
+
+  // --- Deleted IDs blacklist (prevents auto-generated entries from reappearing) ---
+  const DELETED_IDS_KEY = 'budget_deleted_ids';
+  function loadDeletedIds() {
+    try { return new Set(JSON.parse(localStorage.getItem(DELETED_IDS_KEY)) || []); }
+    catch { return new Set(); }
+  }
+  function saveDeletedIds(ids) {
+    localStorage.setItem(DELETED_IDS_KEY, JSON.stringify([...ids]));
+  }
+  function markDeleted(idOrIds) {
+    const deleted = loadDeletedIds();
+    if (typeof idOrIds === 'string') deleted.add(idOrIds);
+    else idOrIds.forEach(id => deleted.add(id));
+    saveDeletedIds(deleted);
   }
 
   function getMonthKey(y, m) {
@@ -754,27 +1234,45 @@
     const MONTHS = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',
                     Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
 
-    // Extract date from "Check-in\nSun, Feb 8" or "Checkout\nMon, Feb 9"
-    function toDate(label) {
-      const re = new RegExp(label + '\\s+\\w+,\\s*(\\w{3})\\s+(\\d{1,2})');
-      const m = body.match(re);
-      if (!m || !MONTHS[m[1]]) return null;
-      const mo = MONTHS[m[1]], day = m[2].padStart(2, '0');
+    // Build date string with year boundary handling
+    function buildDate(monthStr, dayStr) {
+      if (!MONTHS[monthStr]) return null;
+      const mo = MONTHS[monthStr], day = dayStr.padStart(2, '0');
       let y = year;
       // Year boundary: email in Nov/Dec, check-in in Jan/Feb → next year
       if (row.email_date) {
         const es = String(row.email_date);
-        const emm = es.match(/Date\(\d+,(\d+)/) || es.match(/-(\d{2})-/);
-        if (emm) {
-          const em = es.includes('Date(') ? parseInt(emm[1]) + 1 : parseInt(emm[1]);
-          if (em >= 11 && parseInt(mo) <= 2) y = year + 1;
-        }
+        let em = 0;
+        const gvizM = es.match(/Date\(\d+,(\d+)/);
+        const isoM = es.match(/-(\d{2})-/);
+        const MONTH_MAP = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+        const headerM = es.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b/i);
+        if (gvizM) em = parseInt(gvizM[1]) + 1;
+        else if (isoM) em = parseInt(isoM[1]);
+        else if (headerM) em = MONTH_MAP[headerM[1].toLowerCase()];
+        if (em >= 11 && parseInt(mo) <= 2) y = year + 1;
       }
       return `${y}-${mo}-${day}`;
     }
 
-    const check_in = toDate('Check-in');
-    const check_out = toDate('Checkout');
+    let check_in = null, check_out = null;
+
+    // Format 1: side-by-side (.eml) "Sun, Jan 25   Mon, Jan 26"
+    const datesMatch = body.match(/(\w{3}),\s*(\w{3})\s+(\d{1,2})\s+(\w{3}),\s*(\w{3})\s+(\d{1,2})/);
+    if (datesMatch && MONTHS[datesMatch[2]] && MONTHS[datesMatch[5]]) {
+      check_in = buildDate(datesMatch[2], datesMatch[3]);
+      check_out = buildDate(datesMatch[5], datesMatch[6]);
+    }
+
+    // Format 2: block (Zapier) "Check-in\nSun, Feb 8"
+    if (!check_in) {
+      const ciMatch = body.match(/Check-in\s+\w{3},\s*(\w{3})\s+(\d{1,2})/i);
+      if (ciMatch) check_in = buildDate(ciMatch[1], ciMatch[2]);
+    }
+    if (!check_out) {
+      const coMatch = body.match(/Checkout\s+\w{3},\s*(\w{3})\s+(\d{1,2})/i);
+      if (coMatch) check_out = buildDate(coMatch[1], coMatch[2]);
+    }
 
     // Nights: "₩30,000 x 1 night"
     const nightsMatch = body.match(/x\s*(\d+)\s*night/i);
@@ -802,56 +1300,242 @@
     };
   }
 
-  function bookingsToTransactions(bookings) {
+  // --- OTA Detection ---
+  function detectOta(subject) {
+    if (/Agoda Booking ID/i.test(subject)) return 'agoda';
+    if (/Booking\.com/i.test(subject) || /신규 예약 안내/i.test(subject) || /취소된 예약 안내/i.test(subject) || /첫 고객을 맞이할/i.test(subject)) return 'booking';
+    return 'airbnb';
+  }
+
+  function detectCancellation(subject, body, ota) {
+    if (ota === 'agoda') {
+      if (/CANCELLED/i.test(subject)) {
+        const m = subject.match(/Agoda Booking ID\s*(\d+)/i);
+        return m ? m[1] : null;
+      }
+    } else if (ota === 'booking') {
+      if (/취소된 예약/i.test(subject)) {
+        const m = subject.match(/\((\d+)/);
+        return m ? m[1] : null;
+      }
+    } else {
+      if (/cancel/i.test(subject)) {
+        const idFromSubject = subject.match(/Reservation\s+([A-Z0-9]+)/i);
+        const idFromBody = (body || '').match(/Confirmation code\s*([A-Z0-9]+)/i);
+        return idFromSubject?.[1] || idFromBody?.[1] || null;
+      }
+    }
+    return null;
+  }
+
+  // --- Agoda Parser (HTML/DOMParser) ---
+  function parseAgodaEmail(row) {
+    const html = row.email_body_html || row.email_body || '';
+    if (!html || !html.includes('<')) return null;
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    const bookingIdEl = doc.getElementById('ltrBookingIDValue');
+    if (!bookingIdEl) return null;
+    const booking_id = bookingIdEl.textContent.trim();
+
+    const firstName = (doc.getElementById('ltrCustomerFirstNameValue')?.textContent || '').trim();
+    const lastName = (doc.getElementById('ltrCustomerLastNameValue')?.textContent || '').trim();
+    const guest_name = `${firstName} ${lastName}`.trim();
+
+    const arrivalText = (doc.getElementById('lblCustomerArrival')?.textContent || '').trim();
+    const departureText = (doc.getElementById('lblCustomerDeparture')?.textContent || '').trim();
+
+    function parseAgodaDate(text) {
+      const m = text.match(/(\w+)\s+(\d{1,2}),\s*(\d{4})/);
+      if (!m) return null;
+      const months = {January:'01',February:'02',March:'03',April:'04',May:'05',June:'06',
+                      July:'07',August:'08',September:'09',October:'10',November:'11',December:'12'};
+      const mo = months[m[1]];
+      if (!mo) return null;
+      return `${m[3]}-${mo}-${m[2].padStart(2,'0')}`;
+    }
+
+    const check_in = parseAgodaDate(arrivalText);
+    const check_out = parseAgodaDate(departureText);
+
+    // Net Rate from lblAmountPayableData (e.g., "KRW 348,800.00")
+    const netRateEl = doc.getElementById('lblAmountPayableData');
+    const netRateText = netRateEl ? netRateEl.textContent : '';
+    const netRateMatch = netRateText.match(/KRW\s*([\d,]+)/);
+    const net_rate = netRateMatch ? parseInt(netRateMatch[1].replace(/,/g, '')) : 0;
+
+    // Commission from referenceCommissionLabel's row
+    let commission = 0;
+    const commLabelEl = doc.getElementById('referenceCommissionLabel');
+    if (commLabelEl) {
+      const commRow = commLabelEl.closest('tr');
+      if (commRow) {
+        const rateTds = commRow.querySelectorAll('td');
+        for (const td of rateTds) {
+          const text = td.textContent;
+          const num = text.match(/-?\s*([\d,]+)\.\d+/);
+          if (num) { commission = parseInt(num[1].replace(/,/g, '')); break; }
+        }
+      }
+    }
+
+    // Cleaning fee from "Cleaning Service Fee" row
+    let cleaning_fee = 0;
+    const allTds = doc.querySelectorAll('td.rates2, td[class*="rates2"]');
+    for (const td of allTds) {
+      if (td.textContent.includes('Cleaning Service Fee') || td.textContent.includes('Cleaning')) {
+        const row = td.closest('tr');
+        if (row) {
+          const cells = row.querySelectorAll('td');
+          for (const cell of cells) {
+            if (cell === td) continue;
+            const num = cell.textContent.match(/([\d,]+)\.\d+/);
+            if (num) { cleaning_fee = parseInt(num[1].replace(/,/g, '')); break; }
+          }
+        }
+        break;
+      }
+    }
+
+    let nights = 1;
+    if (check_in && check_out) {
+      const d1 = new Date(check_in + 'T00:00:00');
+      const d2 = new Date(check_out + 'T00:00:00');
+      nights = Math.max(1, Math.round((d2 - d1) / 86400000));
+    }
+
+    return {
+      ota: 'agoda', booking_id, guest_name, check_in, check_out, nights,
+      net_rate, commission, cleaning_fee,
+      nightly_rate: 0, service_fee: 0, total_payout: 0
+    };
+  }
+
+  // --- Booking.com Parser (subject only) ---
+  function parseBookingEmail(row) {
+    const subject = row.email_subject || '';
+    const idMatch = subject.match(/\((\d+)/);
+    if (!idMatch) return null;
+    const booking_id = idMatch[1];
+
+    const dateMatch = subject.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+    let check_in = null;
+    if (dateMatch) {
+      check_in = `${dateMatch[1]}-${dateMatch[2].padStart(2,'0')}-${dateMatch[3].padStart(2,'0')}`;
+    }
+
+    // Skip non-booking emails (e.g., promo emails without reservation ID)
+    if (!/신규 예약/i.test(subject) && !/첫 고객을 맞이할/i.test(subject)) return null;
+
+    return {
+      ota: 'booking', booking_id, guest_name: '', check_in, check_out: null,
+      nights: 0, nightly_rate: 0, cleaning_fee: 0, service_fee: 0, total_payout: 0,
+      net_rate: 0, commission: 0
+    };
+  }
+
+  // --- Unified Dispatcher ---
+  function parseEmailRow(row) {
+    const subject = row.email_subject || '';
+    const ota = detectOta(subject);
+    if (ota === 'agoda') return parseAgodaEmail(row);
+    if (ota === 'booking') return parseBookingEmail(row);
+    const booking = parseEmailBody(row);
+    if (booking) booking.ota = 'airbnb';
+    return booking;
+  }
+
+  // --- Multi-OTA Transaction Generation ---
+  function bookingsToTransactionsMultiOta(bookings) {
     const txs = [];
     for (const b of bookings) {
-      if (!b.booking_id) continue;
-
+      if (!b.booking_id || !b.check_in) continue;
       const date = b.check_in;
-      if (!date) continue;
 
-      const room = (b.nightly_rate || 0) * (b.nights || 1);
-      const clean = b.cleaning_fee || 0;
-      const fee = b.service_fee || 0;
-      const guestNote = `${b.guest_name || ''} (${b.nights || '?'}박)`.trim();
+      if (b.ota === 'agoda') {
+        const cleanFee = b.cleaning_fee || 0;
+        const roomIncome = (b.net_rate || 0) - cleanFee;
+        const comm = b.commission || 0;
+        const guestNote = `${b.guest_name || ''} (${b.nights || '?'}박)`.trim();
 
-      if (room > 0) {
-        txs.push({
-          id: `airbnb_${b.booking_id}_room`,
-          date, type: 'income', category: '숙박요금',
-          amount: room, note: guestNote, source: 'airbnb_sync'
-        });
+        if (roomIncome > 0) {
+          txs.push({ id: `agoda_${b.booking_id}_room`, date, type: 'income', platform: 'Agoda', category: '숙박요금',
+            amount: roomIncome, note: guestNote, source: 'agoda_sync' });
+        }
+        if (cleanFee > 0) {
+          txs.push({ id: `agoda_${b.booking_id}_clean`, date, type: 'income', platform: 'Agoda', category: '청소요금',
+            amount: cleanFee, note: guestNote, source: 'agoda_sync' });
+        }
+        if (comm > 0) {
+          txs.push({ id: `agoda_${b.booking_id}_fee`, date, type: 'expense', platform: 'Agoda', category: '수수료',
+            amount: comm, note: `${b.guest_name || ''} 수수료`.trim(), source: 'agoda_sync' });
+        }
+        txs.push({ id: `agoda_${b.booking_id}_clean_exp`, date, type: 'expense', platform: 'Agoda', category: '청소요금',
+          amount: 40000, note: guestNote, source: 'agoda_clean_expense' });
+
+      } else if (b.ota === 'booking') {
+        const guestNote = `부킹닷컴 예약 #${b.booking_id}`;
+        txs.push({ id: `booking_${b.booking_id}_placeholder`, date, type: 'income', platform: 'Booking.com', category: '숙박요금',
+          amount: 0, note: guestNote, source: 'booking_sync' });
+
+      } else {
+        // airbnb
+        const room = (b.nightly_rate || 0) * (b.nights || 1);
+        const clean = b.cleaning_fee || 0;
+        const fee = b.service_fee || 0;
+        const guestNote = `${b.guest_name || ''} (${b.nights || '?'}박)`.trim();
+
+        if (room > 0) {
+          txs.push({ id: `airbnb_${b.booking_id}_room`, date, type: 'income', platform: 'Airbnb', category: '숙박요금',
+            amount: room, note: guestNote, source: 'airbnb_sync' });
+        }
+        if (clean > 0) {
+          txs.push({ id: `airbnb_${b.booking_id}_clean`, date, type: 'income', platform: 'Airbnb', category: '청소요금',
+            amount: clean, note: guestNote, source: 'airbnb_sync' });
+        }
+        if (fee > 0) {
+          txs.push({ id: `airbnb_${b.booking_id}_fee`, date, type: 'expense', platform: 'Airbnb', category: '수수료',
+            amount: fee, note: `${b.guest_name || ''} 수수료`.trim(), source: 'airbnb_sync' });
+        }
+        txs.push({ id: `airbnb_${b.booking_id}_clean_exp`, date, type: 'expense', platform: 'Airbnb', category: '청소요금',
+          amount: 40000, note: guestNote, source: 'airbnb_clean_expense' });
       }
-      if (clean > 0) {
-        txs.push({
-          id: `airbnb_${b.booking_id}_clean`,
-          date, type: 'income', category: '청소요금',
-          amount: clean, note: guestNote, source: 'airbnb_sync'
-        });
-      }
-      if (fee > 0) {
-        txs.push({
-          id: `airbnb_${b.booking_id}_fee`,
-          date, type: 'expense', category: '에어비앤비 수수료',
-          amount: fee, note: `${b.guest_name || ''} 수수료`.trim(), source: 'airbnb_sync'
-        });
-      }
-      // 청소 지출 (기본 ₩40,000, 수정 가능)
-      txs.push({
-        id: `airbnb_${b.booking_id}_clean_exp`,
-        date, type: 'expense', category: '청소요금',
-        amount: 40000, note: guestNote, source: 'airbnb_clean_expense'
-      });
     }
     return txs;
+  }
+
+  // --- 삼삼엠투 1회 수동 입력 ---
+  function addSamsamTransaction() {
+    const txs = loadTransactions();
+    const idSet = new Set(txs.map(tx => tx.id));
+    const deletedIds = loadDeletedIds();
+    const date = '2025-12-20';
+    const prefix = 'samsam_20251220';
+    let added = 0;
+    const entries = [
+      { id: `${prefix}_room`, type: 'income', category: '숙박요금', amount: 1000000, note: '삼삼엠투 예약', source: 'samsam_sync' },
+      { id: `${prefix}_clean`, type: 'income', category: '청소요금', amount: 50000, note: '삼삼엠투 예약', source: 'samsam_sync' },
+      { id: `${prefix}_fee`, type: 'expense', category: '수수료', amount: 34650, note: '삼삼엠투 수수료', source: 'samsam_sync' },
+      { id: `${prefix}_clean_exp`, type: 'expense', category: '청소요금', amount: 40000, note: '삼삼엠투 예약', source: 'samsam_clean_expense' }
+    ];
+    for (const e of entries) {
+      if (!idSet.has(e.id) && !deletedIds.has(e.id)) {
+        txs.push({ ...e, date, platform: '삼삼엠투' });
+        added++;
+      }
+    }
+    if (added > 0) saveTransactions(txs);
   }
 
   // --- Merge ---
   function mergeTransactions(existing, synced) {
     const idSet = new Set(existing.map(tx => tx.id));
+    const deletedIds = loadDeletedIds();
     let newCount = 0;
     for (const tx of synced) {
-      if (!idSet.has(tx.id)) {
+      if (!idSet.has(tx.id) && !deletedIds.has(tx.id)) {
         existing.push(tx);
         newCount++;
       }
@@ -871,14 +1555,21 @@
         if (y < startY || (y === startY && m - 1 < startM)) { startY = y; startM = m - 1; }
       }
     });
+    // Find latest transaction month (future bookings included)
+    let endY = now.getFullYear(), endM = now.getMonth();
+    txs.forEach(tx => {
+      if (tx.date) {
+        const [y2, m2] = tx.date.split('-').map(Number);
+        if (y2 > endY || (y2 === endY && m2 - 1 > endM)) { endY = y2; endM = m2 - 1; }
+      }
+    });
     const idSet = new Set(txs.map(tx => tx.id));
+    const deletedIds = loadDeletedIds();
     let y = startY, m = startM, added = 0;
-    while (y < now.getFullYear() || (y === now.getFullYear() && m <= now.getMonth())) {
-      // 당월은 22일이 지나야 임대료 반영
-      if (y === now.getFullYear() && m === now.getMonth() && now.getDate() < 22) break;
+    while (y < endY || (y === endY && m <= endM)) {
       const mo = String(m + 1).padStart(2, '0');
       const id = `auto_rent_${y}_${mo}`;
-      if (!idSet.has(id)) {
+      if (!idSet.has(id) && !deletedIds.has(id)) {
         txs.push({ id, date: `${y}-${mo}-22`, type: 'expense', category: '임대료 및 관리비',
           amount: 1250000, note: '월 임대료 및 관리비', source: 'auto_rent' });
         added++;
@@ -894,10 +1585,11 @@
     const txs = loadTransactions();
     const tx = txs.find(t => t.id === id);
     if (!tx) return;
-    const input = prompt(`금액 수정 (현재: ₩${tx.amount.toLocaleString()})`, tx.amount);
+    const currentDisplay = tx.amount > 0 ? `₩${tx.amount.toLocaleString()}` : '미입력';
+    const input = prompt(`금액 수정 (현재: ${currentDisplay})`, tx.amount || '');
     if (input === null) return;
     const val = parseInt(input.replace(/,/g, ''), 10);
-    if (!val || val <= 0) { alert('올바른 금액을 입력하세요.'); return; }
+    if (isNaN(val) || val < 0) { alert('올바른 금액을 입력하세요.'); return; }
     tx.amount = val;
     saveTransactions(txs);
     render();
@@ -929,14 +1621,53 @@
     try {
       const table = await fetchSheetData(sheetId);
       const rawRows = parseSheetRows(table);
-      const bookings = rawRows.map(parseEmailBody).filter(Boolean);
-      const synced = bookingsToTransactions(bookings);
+
+      const cancelledIds = new Set();
+      const confirmRows = [];
+      for (const row of rawRows) {
+        const subject = (row.email_subject || row['email_subject'] || '').toString();
+        const body = (row.email_body || row['email_body'] || '').toString();
+        const ota = detectOta(subject);
+        const cancelId = detectCancellation(subject, body, ota);
+        if (cancelId) {
+          cancelledIds.add(cancelId);
+        } else {
+          confirmRows.push(row);
+        }
+      }
+
+      // 취소된 예약의 기존 거래 삭제 (모든 OTA prefix 대응)
+      let cancelledCount = 0;
+      if (cancelledIds.size > 0) {
+        const txs = loadTransactions();
+        const before = txs.length;
+        const filtered = txs.filter(tx => {
+          if (!tx.source) return true;
+          for (const cid of cancelledIds) {
+            if (tx.id.startsWith(`airbnb_${cid}_`) || tx.id.startsWith(`agoda_${cid}_`) || tx.id.startsWith(`booking_${cid}_`)) return false;
+          }
+          return true;
+        });
+        cancelledCount = before - filtered.length;
+        if (cancelledCount > 0) {
+          const removedIds = txs.filter(tx => !filtered.includes(tx)).map(tx => tx.id);
+          markDeleted(removedIds);
+          saveTransactions(filtered);
+        }
+      }
+
+      // 취소된 booking 제외 후 거래 생성
+      const bookings = confirmRows.map(parseEmailRow).filter(Boolean);
+      const validBookings = bookings.filter(b => !cancelledIds.has(b.booking_id));
+      const synced = bookingsToTransactionsMultiOta(validBookings);
       const existing = loadTransactions();
       const newCount = mergeTransactions(existing, synced);
       saveTransactions(existing);
+      generateMonthlyRent();
       render();
 
-      elStatus.textContent = `완료! ${newCount}개 새 거래 추가 (총 ${synced.length}건 확인)`;
+      const cancelMsg = cancelledCount > 0 ? `, ${cancelledCount}개 취소 삭제` : '';
+      elStatus.textContent = `완료! ${newCount}개 새 거래 추가 (총 ${synced.length}건 확인)${cancelMsg}`;
       elStatus.className = 'sync-status success';
     } catch (err) {
       elStatus.textContent = `동기화 실패: ${err.message}`;
@@ -973,11 +1704,20 @@
   });
 
   // --- Category select ---
+  const elTxCategoryCustom = document.getElementById('txCategoryCustom');
+
   function updateCategories() {
     const type = elTxType.value;
     const cats = CATEGORIES[type];
-    elTxCategory.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    elTxCategory.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('')
+      + '<option value="__custom__">기타 (직접 입력)</option>';
+    elTxCategoryCustom.style.display = 'none';
+    elTxCategoryCustom.value = '';
   }
+
+  elTxCategory.addEventListener('change', () => {
+    elTxCategoryCustom.style.display = elTxCategory.value === '__custom__' ? '' : 'none';
+  });
 
   elTxType.addEventListener('change', updateCategories);
   updateCategories();
@@ -996,12 +1736,18 @@
   document.getElementById('btnAdd').addEventListener('click', () => {
     const date = elTxDate.value;
     const type = elTxType.value;
-    const category = elTxCategory.value;
+    const platform = document.getElementById('txPlatform').value;
+    const categoryRaw = elTxCategory.value;
+    const category = categoryRaw === '__custom__' ? elTxCategoryCustom.value.trim() : categoryRaw;
     const amount = parseInt(elTxAmount.value, 10);
     const note = elTxNote.value.trim();
 
     if (!date || !amount || amount <= 0) {
-      alert('날짜와 금액을 올바르게 입력해 주세요.');
+      alert('입실일과 금액을 올바르게 입력해 주세요.');
+      return;
+    }
+    if (!category) {
+      alert('카테고리명을 입력해 주세요.');
       return;
     }
 
@@ -1010,6 +1756,7 @@
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       date,
       type,
+      platform,
       category,
       amount,
       note
@@ -1019,6 +1766,10 @@
     // Reset
     elTxAmount.value = '';
     elTxNote.value = '';
+    document.getElementById('txPlatform').value = '';
+    elTxCategoryCustom.value = '';
+    elTxCategoryCustom.style.display = 'none';
+    updateCategories();
     setDefaultDate();
 
     render();
@@ -1029,6 +1780,7 @@
     if (!confirm('이 거래를 삭제하시겠습니까?')) return;
     const txs = loadTransactions().filter(tx => tx.id !== id);
     saveTransactions(txs);
+    markDeleted(id);
     render();
   }
 
@@ -1057,11 +1809,35 @@
     elNetProfit.textContent = (net >= 0 ? '+' : '') + formatCurrency(net);
     elNetProfit.className = 'value ' + (net >= 0 ? 'positive' : 'negative');
 
+    // Cumulative net profit (all transactions)
+    let cumIncome = 0, cumExpense = 0;
+    allTx.forEach(tx => {
+      if (tx.type === 'income') cumIncome += tx.amount;
+      else cumExpense += tx.amount;
+    });
+    const cumNet = cumIncome - cumExpense;
+    const elCumNet = document.getElementById('cumNetProfit');
+    elCumNet.textContent = (cumNet >= 0 ? '+' : '') + formatCurrency(cumNet);
+    elCumNet.className = 'cum-value ' + (cumNet >= 0 ? 'positive' : 'negative');
+
+    // Period query update (if open)
+    updatePeriodSummary(allTx);
+
     // Chart — last 6 months
     renderChart(allTx);
 
-    // Transaction list
-    renderList(monthTx);
+    // Transaction list — filter or monthly view
+    const filtering = hasActiveFilter();
+    const listTitle = document.getElementById('listTitle');
+    if (filtering) {
+      const filtered = applyFilters(allTx);
+      filtered.sort((a, b) => b.date.localeCompare(a.date));
+      listTitle.textContent = `검색 결과 (${filtered.length}건)`;
+      renderList(filtered, true);
+    } else {
+      listTitle.textContent = '거래 내역';
+      renderList(monthTx, false);
+    }
   }
 
   function renderChart(allTx) {
@@ -1098,53 +1874,415 @@
     }).join('');
   }
 
-  function renderList(txs) {
+  // Infer platform from source for old transactions without platform field
+  function getPlatform(tx) {
+    if (tx.platform) return tx.platform;
+    if (tx.source && tx.source.includes('airbnb')) return 'Airbnb';
+    if (tx.source && tx.source.includes('agoda')) return 'Agoda';
+    if (tx.source && tx.source.includes('booking')) return 'Booking.com';
+    if (tx.source && tx.source.includes('samsam')) return '삼삼엠투';
+    return '';
+  }
+
+  // --- Filter helpers ---
+  function hasActiveFilter() {
+    const search = document.getElementById('filterSearch').value.trim();
+    const ota = document.getElementById('filterOta').value;
+    const type = document.getElementById('filterType').value;
+    return !!(search || ota || type);
+  }
+
+  function applyFilters(allTx) {
+    const search = document.getElementById('filterSearch').value.trim().toLowerCase();
+    const ota = document.getElementById('filterOta').value;
+    const type = document.getElementById('filterType').value;
+    return allTx.filter(tx => {
+      if (type && tx.type !== type) return false;
+      if (ota && getPlatform(tx) !== ota) return false;
+      if (search) {
+        const haystack = [tx.category || '', tx.note || '', getPlatform(tx)].join(' ').toLowerCase();
+        if (!haystack.includes(search)) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderList(txs, isFiltering) {
+    const btnBulk = document.getElementById('btnBulkDelete');
+    btnBulk.classList.remove('visible');
+
     if (txs.length === 0) {
-      elTxList.innerHTML = '<div class="empty-state">이번 달 거래 내역이 없습니다.</div>';
+      const msg = isFiltering ? '검색 결과가 없습니다.' : '이번 달 거래 내역이 없습니다.';
+      elTxList.innerHTML = `<div class="empty-state">${msg}</div>`;
       return;
     }
+
+    function platformBadge(p) {
+      if (!p) return '<span style="color:var(--text-light)">-</span>';
+      const cls = { 'Airbnb': 'badge-airbnb', 'Agoda': 'badge-agoda', 'Booking.com': 'badge-booking', '삼삼엠투': 'badge-samsam' };
+      return `<span class="badge-ota ${cls[p] || ''}">${p}</span>`;
+    }
+
+    function escHtml(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;') : ''; }
 
     let html = `
       <table class="tx-table">
         <thead>
           <tr>
-            <th>날짜</th>
+            <th class="col-check"><input type="checkbox" id="txSelectAll"></th>
+            <th>입실일</th>
             <th>유형</th>
+            <th>플랫폼</th>
             <th>카테고리</th>
-            <th>금액</th>
-            <th>메모</th>
-            <th></th>
+            <th class="col-amount">금액</th>
+            <th class="col-action"></th>
           </tr>
         </thead>
         <tbody>`;
 
     txs.forEach(tx => {
-      const isAuto = tx.source && tx.source !== '';
-      const badge = isAuto ? '<span class="badge-auto">자동</span>' : '';
+      const platform = getPlatform(tx);
+
       let actionBtn = '';
-      if (tx.source === 'airbnb_clean_expense') {
+      const isCleanExp = tx.source && tx.source.includes('_clean_expense');
+      const isBookingPlaceholder = tx.source === 'booking_sync' && tx.amount === 0;
+      if (isCleanExp) {
         actionBtn = `<button class="btn-edit" onclick="window.__editTxAmount('${tx.id}')">수정</button>`;
-      } else if (!isAuto) {
-        actionBtn = `<button class="btn-delete" onclick="window.__deleteTx('${tx.id}')">&times;</button>`;
+      } else if (isBookingPlaceholder) {
+        actionBtn = `<button class="btn-edit-placeholder" onclick="window.__editTxAmount('${tx.id}')">입력</button>`;
       }
+
+      const rowCls = [
+        isBookingPlaceholder ? 'tx-placeholder' : '',
+        tx.note ? 'tx-row-with-note' : ''
+      ].filter(Boolean).join(' ');
+      const rowAttr = rowCls ? ` class="${rowCls}"` : '';
+      const amountDisplay = isBookingPlaceholder ? '미입력' : (tx.type === 'expense' ? '-' : '+') + formatCurrency(tx.amount);
+      const tooltip = tx.note ? `<span class="tx-tooltip">${escHtml(tx.note)}</span>` : '';
+
       html += `
-          <tr>
-            <td>${formatDate(tx.date)}</td>
-            <td><span class="tx-type ${tx.type}">${tx.type === 'income' ? '수입' : '지출'}</span>${badge}</td>
-            <td>${tx.category}</td>
-            <td class="tx-amount ${tx.type}">${(tx.type === 'expense' ? '-' : '+') + formatCurrency(tx.amount)}</td>
-            <td>${tx.note || '-'}</td>
-            <td>${actionBtn}</td>
+          <tr${rowAttr}>
+            <td class="col-check"><input type="checkbox" class="tx-check" data-id="${tx.id}"></td>
+            <td class="col-date">${isFiltering ? tx.date : formatDate(tx.date)}</td>
+            <td><span class="tx-type ${tx.type}">${tx.type === 'income' ? '수입' : '지출'}</span></td>
+            <td>${platformBadge(platform)}</td>
+            <td class="col-cat">${escHtml(tx.category)}${tooltip}</td>
+            <td class="col-amount tx-amount ${tx.type}">${amountDisplay}</td>
+            <td class="col-action">${actionBtn}</td>
           </tr>`;
     });
 
     html += '</tbody></table>';
     elTxList.innerHTML = html;
+    updateBulkBtn();
   }
+
+  function updateBulkBtn() {
+    const btnBulk = document.getElementById('btnBulkDelete');
+    const checked = elTxList.querySelectorAll('.tx-check:checked').length;
+    btnBulk.classList.toggle('visible', checked > 0);
+    btnBulk.textContent = checked > 0 ? `선택 삭제 (${checked})` : '선택 삭제';
+  }
+
+  // Event delegation: registered once on elTxList
+  elTxList.addEventListener('change', (e) => {
+    if (e.target.id === 'txSelectAll') {
+      const checked = e.target.checked;
+      elTxList.querySelectorAll('.tx-check').forEach(cb => cb.checked = checked);
+      updateBulkBtn();
+    } else if (e.target.classList.contains('tx-check')) {
+      updateBulkBtn();
+    }
+  });
+
+  // --- Bulk delete ---
+  document.getElementById('btnBulkDelete').addEventListener('click', () => {
+    const checked = elTxList.querySelectorAll('.tx-check:checked');
+    if (checked.length === 0) return;
+    if (!confirm(`선택한 ${checked.length}건의 거래를 삭제하시겠습니까?`)) return;
+    const ids = new Set(Array.from(checked).map(cb => cb.dataset.id));
+    const txs = loadTransactions().filter(tx => !ids.has(tx.id));
+    saveTransactions(txs);
+    markDeleted(ids);
+    render();
+  });
 
   // Expose handlers
   window.__deleteTx = deleteTx;
   window.__editTxAmount = editTxAmount;
+
+  // --- Filter event bindings ---
+  document.getElementById('filterSearch').addEventListener('input', () => render());
+  document.getElementById('filterOta').addEventListener('change', () => render());
+  document.getElementById('filterType').addEventListener('change', () => render());
+  document.getElementById('filterClear').addEventListener('click', () => {
+    document.getElementById('filterSearch').value = '';
+    document.getElementById('filterOta').value = '';
+    document.getElementById('filterType').value = '';
+    render();
+  });
+
+  // --- Period Query ---
+  function updatePeriodSummary(allTx) {
+    let from = document.getElementById('periodFrom').value;
+    let to = document.getElementById('periodTo').value;
+    if (!from || !to) return;
+    if (from > to) {
+      [from, to] = [to, from];
+      document.getElementById('periodFrom').value = from;
+      document.getElementById('periodTo').value = to;
+    }
+    let pIncome = 0, pExpense = 0;
+    allTx.forEach(tx => {
+      if (tx.date >= from && tx.date <= to) {
+        if (tx.type === 'income') pIncome += tx.amount;
+        else pExpense += tx.amount;
+      }
+    });
+    const pNet = pIncome - pExpense;
+    document.getElementById('periodIncome').textContent = formatCurrency(pIncome);
+    document.getElementById('periodExpense').textContent = formatCurrency(pExpense);
+    const elPNet = document.getElementById('periodNet');
+    elPNet.textContent = (pNet >= 0 ? '+' : '') + formatCurrency(pNet);
+    elPNet.className = 'ps-value ' + (pNet >= 0 ? 'positive' : 'negative');
+  }
+
+  document.getElementById('btnPeriodToggle').addEventListener('click', function() {
+    const section = document.getElementById('periodSection');
+    const isOpen = section.classList.toggle('open');
+    this.classList.toggle('active', isOpen);
+    if (isOpen && !document.getElementById('periodFrom').value) {
+      // Default: first day of current month to today
+      const now = new Date();
+      const y = now.getFullYear(), m = String(now.getMonth() + 1).padStart(2, '0');
+      document.getElementById('periodFrom').value = `${y}-${m}-01`;
+      document.getElementById('periodTo').value = now.toISOString().slice(0, 10);
+      updatePeriodSummary(loadTransactions());
+    }
+  });
+
+  document.getElementById('periodFrom').addEventListener('change', () => updatePeriodSummary(loadTransactions()));
+  document.getElementById('periodTo').addEventListener('change', () => updatePeriodSummary(loadTransactions()));
+
+  // --- EML Parser ---
+  function decodeBase64Utf8(str) {
+    try {
+      const bin = atob(str.replace(/\s/g, ''));
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch { return str; }
+  }
+
+  function decodeQP(text) {
+    text = text.replace(/=\r?\n/g, '');
+    const bytes = [];
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] === '=' && /^[0-9A-Fa-f]{2}$/.test(text.substring(i+1, i+3))) {
+        bytes.push(parseInt(text.substring(i+1, i+3), 16));
+        i += 2;
+      } else {
+        bytes.push(text.charCodeAt(i));
+      }
+    }
+    try { return new TextDecoder('utf-8').decode(new Uint8Array(bytes)); }
+    catch { return text; }
+  }
+
+  function decodeRfc2047(str) {
+    return str.replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g, (_, cs, enc, txt) => {
+      if (enc.toUpperCase() === 'B') return decodeBase64Utf8(txt);
+      return decodeQP(txt.replace(/_/g, ' '));
+    });
+  }
+
+  function decodeBody(text, encoding) {
+    text = text.trim();
+    if (encoding.includes('base64')) return decodeBase64Utf8(text);
+    if (encoding.includes('quoted-printable')) return decodeQP(text);
+    return text;
+  }
+
+  function extractHtmlFromMime(body, contentType) {
+    const bm = contentType.match(/boundary="?([^";\s]+)"?/);
+    if (!bm) return '';
+    const parts = body.split('--' + bm[1]);
+    for (const part of parts) {
+      if (!part.trim() || part.trim() === '--') continue;
+      const sp = part.indexOf('\n\n');
+      if (sp < 0) continue;
+      const ph = part.substring(0, sp).toLowerCase();
+      const pb = part.substring(sp + 2);
+      if (ph.includes('multipart')) {
+        const ct = ph.split('\n').find(l => l.includes('content-type'));
+        if (ct) { const r = extractHtmlFromMime(pb, ct); if (r) return r; }
+        continue;
+      }
+      if (ph.includes('text/html')) {
+        const enc = ph.includes('base64') ? 'base64' : ph.includes('quoted-printable') ? 'quoted-printable' : '';
+        return decodeBody(pb, enc);
+      }
+    }
+    return '';
+  }
+
+  function extractPlainFromMime(body, contentType) {
+    const bm = contentType.match(/boundary="?([^";\s]+)"?/);
+    if (!bm) return '';
+    const parts = body.split('--' + bm[1]);
+    for (const part of parts) {
+      if (!part.trim() || part.trim() === '--') continue;
+      const sp = part.indexOf('\n\n');
+      if (sp < 0) continue;
+      const ph = part.substring(0, sp).toLowerCase();
+      const pb = part.substring(sp + 2);
+      if (ph.includes('multipart')) {
+        const ct = ph.split('\n').find(l => l.includes('content-type'));
+        if (ct) { const r = extractPlainFromMime(pb, ct); if (r) return r; }
+        continue;
+      }
+      if (ph.includes('text/plain')) {
+        const enc = ph.includes('base64') ? 'base64' : ph.includes('quoted-printable') ? 'quoted-printable' : '';
+        return decodeBody(pb, enc);
+      }
+    }
+    // Fallback: text/html → strip tags
+    for (const part of parts) {
+      if (!part.trim() || part.trim() === '--') continue;
+      const sp = part.indexOf('\n\n');
+      if (sp < 0) continue;
+      const ph = part.substring(0, sp).toLowerCase();
+      const pb = part.substring(sp + 2);
+      if (ph.includes('text/html')) {
+        const enc = ph.includes('base64') ? 'base64' : ph.includes('quoted-printable') ? 'quoted-printable' : '';
+        return decodeBody(pb, enc).replace(/<[^>]+>/g, ' ');
+      }
+    }
+    return '';
+  }
+
+  function extractSubjectFromEml(text) {
+    text = text.replace(/\r\n/g, '\n');
+    const sp = text.indexOf('\n\n');
+    const hBlock = (sp >= 0 ? text.substring(0, sp) : text).replace(/\n[ \t]+/g, ' ');
+    const m = hBlock.match(/^Subject:\s*(.*)/mi);
+    return m ? decodeRfc2047(m[1].trim()) : '';
+  }
+
+  function parseEmlFile(text) {
+    text = text.replace(/\r\n/g, '\n');
+    const sp = text.indexOf('\n\n');
+    if (sp < 0) return null;
+    const hBlock = text.substring(0, sp).replace(/\n[ \t]+/g, ' ');
+    const body = text.substring(sp + 2);
+    const headers = {};
+    hBlock.split('\n').forEach(l => {
+      const m = l.match(/^([^:]+):\s*(.*)/);
+      if (m) headers[m[1].toLowerCase()] = m[2].trim();
+    });
+    const ct = headers['content-type'] || 'text/plain';
+    const enc = (headers['content-transfer-encoding'] || '').toLowerCase();
+    let plain = '';
+    let html = '';
+    if (ct.includes('multipart')) {
+      plain = extractPlainFromMime(body, ct);
+      html = extractHtmlFromMime(body, ct);
+    } else if (ct.includes('text/html')) {
+      html = decodeBody(body, enc);
+      plain = html.replace(/<[^>]+>/g, ' ');
+    } else if (ct.includes('text/plain')) {
+      plain = decodeBody(body, enc);
+    } else {
+      plain = decodeBody(body, enc).replace(/<[^>]+>/g, ' ');
+    }
+    if (!plain && !html) return null;
+    return {
+      email_subject: decodeRfc2047(headers['subject'] || ''),
+      email_date: headers['date'] || '',
+      email_body: plain,
+      email_body_html: html
+    };
+  }
+
+  // --- EML Upload Handler ---
+  async function handleEmlFiles(files) {
+    const elStatus = document.getElementById('emlStatus');
+    const emlFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.eml'));
+    if (emlFiles.length === 0) {
+      elStatus.textContent = '.eml 파일을 선택해 주세요.';
+      elStatus.className = 'sync-status error';
+      return;
+    }
+    elStatus.textContent = `${emlFiles.length}개 파일 처리 중...`;
+    elStatus.className = 'sync-status loading';
+    let parsed = 0, skipped = 0;
+    const cancelledIds = new Set();
+    const allBookings = [];
+    for (const file of emlFiles) {
+      try {
+        const text = await file.text();
+        const row = parseEmlFile(text);
+        const subject = row ? (row.email_subject || '') : extractSubjectFromEml(text);
+        const body = row ? (row.email_body || '') : text;
+        const ota = detectOta(subject);
+        const cancelId = detectCancellation(subject, body, ota);
+        if (cancelId) {
+          cancelledIds.add(cancelId);
+          continue;
+        }
+        if (!row) { skipped++; continue; }
+        const booking = parseEmailRow(row);
+        if (!booking) { skipped++; continue; }
+        allBookings.push(booking);
+        parsed++;
+      } catch { skipped++; }
+    }
+    // 취소된 예약의 기존 거래 삭제 (모든 OTA prefix 대응)
+    let cancelledCount = 0;
+    if (cancelledIds.size > 0) {
+      const txs = loadTransactions();
+      const before = txs.length;
+      const filtered = txs.filter(tx => {
+        if (!tx.source) return true;
+        for (const cid of cancelledIds) {
+          if (tx.id.startsWith(`airbnb_${cid}_`) || tx.id.startsWith(`agoda_${cid}_`) || tx.id.startsWith(`booking_${cid}_`)) return false;
+        }
+        return true;
+      });
+      cancelledCount = before - filtered.length;
+      if (cancelledCount > 0) {
+        const removedIds = txs.filter(tx => !filtered.includes(tx)).map(tx => tx.id);
+        markDeleted(removedIds);
+        saveTransactions(filtered);
+      }
+    }
+    // 취소된 booking 제외
+    const validBookings = allBookings.filter(b => !cancelledIds.has(b.booking_id));
+    const synced = bookingsToTransactionsMultiOta(validBookings);
+    const existing = loadTransactions();
+    const newCount = mergeTransactions(existing, synced);
+    saveTransactions(existing);
+    generateMonthlyRent();
+    render();
+    let msg = `완료! ${parsed}건 파싱, ${newCount}개 새 거래 추가`;
+    if (cancelledCount > 0) msg += `, ${cancelledCount}개 취소 삭제`;
+    if (skipped > 0) msg += ` (${skipped}건 건너뜀)`;
+    elStatus.textContent = msg;
+    elStatus.className = 'sync-status success';
+  }
+
+  // --- Sheet link button ---
+  function updateSheetLink() {
+    const btn = document.getElementById('btnSheetLink');
+    const settings = loadSettings();
+    const sheetId = extractSheetId(settings.sheetUrl);
+    if (sheetId) {
+      btn.href = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+      btn.classList.add('visible');
+    } else {
+      btn.classList.remove('visible');
+    }
+  }
 
   // --- Settings panel toggle ---
   document.getElementById('btnSettings').addEventListener('click', () => {
@@ -1153,6 +2291,70 @@
 
   // --- Sync button ---
   document.getElementById('btnSync').addEventListener('click', syncFromGoogleSheets);
+
+  // --- EML upload ---
+  document.getElementById('btnUpload').addEventListener('click', () => document.getElementById('emlFiles').click());
+  document.getElementById('emlFiles').addEventListener('change', (e) => handleEmlFiles(e.target.files));
+  const dropZone = document.getElementById('emlUpload');
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleEmlFiles(e.dataTransfer.files); });
+
+  // --- Backup export/import ---
+  document.getElementById('btnExport').addEventListener('click', () => {
+    const data = {
+      transactions: loadTransactions(),
+      deletedIds: [...loadDeletedIds()],
+      settings: loadSettings(),
+      exportDate: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const d = new Date();
+    a.download = `budget_backup_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    const el = document.getElementById('backupStatus');
+    el.textContent = `백업 완료 (${data.transactions.length}건 거래)`;
+    el.className = 'sync-status success';
+  });
+
+  document.getElementById('btnImport').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const el = document.getElementById('backupStatus');
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data.transactions || !Array.isArray(data.transactions)) {
+          el.textContent = '올바른 백업 파일이 아닙니다.';
+          el.className = 'sync-status error';
+          return;
+        }
+        const count = data.transactions.length;
+        if (!confirm(`백업 데이터(${count}건)로 복원하시겠습니까?\n현재 데이터가 덮어씌워집니다.`)) return;
+        saveTransactions(data.transactions);
+        if (data.deletedIds) saveDeletedIds(new Set(data.deletedIds));
+        if (data.settings) {
+          saveSettings(data.settings);
+          if (data.settings.sheetUrl) document.getElementById('sheetUrl').value = data.settings.sheetUrl;
+          if (data.settings.autoSync) document.getElementById('autoSync').checked = data.settings.autoSync;
+          updateSheetLink();
+        }
+        render();
+        el.textContent = `복원 완료! ${count}건 거래 로드됨`;
+        el.className = 'sync-status success';
+      } catch {
+        el.textContent = '파일 읽기 실패: 올바른 JSON 파일인지 확인하세요.';
+        el.className = 'sync-status error';
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
 
   // --- Load saved settings ---
   const savedSettings = loadSettings();
@@ -1169,6 +2371,7 @@
       sheetUrl: document.getElementById('sheetUrl').value,
       autoSync: document.getElementById('autoSync').checked
     });
+    updateSheetLink();
   });
   document.getElementById('autoSync').addEventListener('change', () => {
     saveSettings({
@@ -1177,7 +2380,9 @@
     });
   });
 
-  // Generate monthly rent & initial render
+  // Generate auto entries & initial render
+  updateSheetLink();
+  addSamsamTransaction();
   generateMonthlyRent();
   render();
 
