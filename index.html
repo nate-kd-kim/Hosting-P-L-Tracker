@@ -168,7 +168,7 @@
     gap: 16px;
     height: 200px;
     justify-content: space-evenly;
-    overflow-x: auto;
+    overflow: visible;
   }
 
   .chart-bar-group {
@@ -186,6 +186,7 @@
     align-items: flex-end;
     gap: 6px;
     height: 150px;
+    overflow: visible;
   }
 
   .chart-bar {
@@ -267,7 +268,7 @@
     gap: 12px;
   }
 
-  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 
   .form-group label {
     font-size: 12px;
@@ -284,6 +285,8 @@
     font-family: inherit;
     outline: none;
     transition: border-color 0.15s;
+    width: 100%;
+    min-width: 0;
   }
 
   .form-group input:focus,
@@ -950,8 +953,8 @@
     header { flex-direction: column; gap: 12px; padding: 16px 16px; }
     .settings-row { flex-direction: column; align-items: flex-start; }
 
-    /* Mobile: horizontal scroll table */
-    .list-section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* Mobile: horizontal scroll table (only #txList scrolls, filter bar stays fixed) */
+    #txList { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .tx-table { min-width: 600px; }
     .tx-table th, .tx-table td { padding: 10px 12px; font-size: 13px; }
 
@@ -969,6 +972,7 @@
     .summary { grid-template-columns: 1fr; }
     .summary-card.net { grid-column: auto; }
     .period-summary { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -2009,9 +2013,12 @@
       return String(v);
     }
 
+    const chartBarsHeight = window.innerWidth <= 700 ? 120 : 150;
+    const maxBarHeight = chartBarsHeight - 18;
+
     elChart.innerHTML = data.map(d => {
-      const ih = Math.max(4, (d.income / maxVal) * 140);
-      const eh = Math.max(4, (d.expense / maxVal) * 140);
+      const ih = Math.max(4, (d.income / maxVal) * maxBarHeight);
+      const eh = Math.max(4, (d.expense / maxVal) * maxBarHeight);
       return `
         <div class="chart-bar-group">
           <div class="chart-bars">
