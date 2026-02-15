@@ -936,6 +936,7 @@
     <details class="sync-guide">
       <summary>연동 설정 가이드</summary>
       <div class="guide-content">
+        <p><strong>Bookings 탭 (예약 자동 동기화)</strong></p>
         <ol>
           <li>Google Sheets에서 시트를 만듭니다. 시트 이름은 <code>Bookings</code>로 설정하세요.</li>
           <li>열 구조 (A~C): <code>email_subject</code>, <code>email_date</code>, <code>email_body</code></li>
@@ -943,6 +944,14 @@
           <li><strong>파일 → 공유 → 웹에 게시</strong>를 클릭하여 시트를 웹에 게시합니다.</li>
           <li>위 입력란에 Google Sheet URL을 붙여넣고 "동기화" 버튼을 클릭하세요.</li>
           <li>앱이 이메일 본문을 자동 파싱하여 수입(정산금)과 지출(수수료) 거래를 생성합니다.</li>
+        </ol>
+        <p><strong>Manual 탭 (공과금/기타 비용 크로스 디바이스 동기화)</strong></p>
+        <ol>
+          <li>같은 스프레드시트에 <code>Manual</code> 탭을 추가합니다.</li>
+          <li>헤더 (A~F): <code>date</code>, <code>type</code>, <code>platform</code>, <code>category</code>, <code>amount</code>, <code>note</code></li>
+          <li>"웹에 게시"에서 Manual 시트도 게시합니다.</li>
+          <li>향후 공과금/기타 비용은 Google Sheets에 직접 입력하면 모든 기기에서 동기화됩니다.</li>
+          <li>기존 수동 입력을 옮기려면 아래 "수동 입력 TSV 복사" 버튼을 사용하세요.</li>
         </ol>
       </div>
     </details>
@@ -961,6 +970,11 @@
         <input type="file" id="importFile" accept=".json" style="display:none">
       </div>
       <div class="sync-status" id="backupStatus"></div>
+      <div class="backup-row" style="margin-top:8px">
+        <button class="btn-backup" id="btnCopyTsv">수동 입력 TSV 복사</button>
+        <span class="upload-hint">Google Sheets Manual 탭에 붙여넣기용</span>
+      </div>
+      <div class="sync-status" id="tsvStatus"></div>
     </div>
   </div>
 
@@ -1175,9 +1189,9 @@
   }
 
   // --- Google Sheets Fetch (JSONP to avoid CORS) ---
-  function fetchSheetData(sheetId) {
+  function fetchSheetData(sheetId, sheetName = 'Bookings') {
     const cb = '_gviz_' + Date.now();
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${cb}&sheet=Bookings`;
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${cb}&sheet=${encodeURIComponent(sheetName)}`;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => { cleanup(); reject(new Error('요청 시간 초과')); }, 15000);
       const script = document.createElement('script');
@@ -1206,6 +1220,47 @@
       });
       return obj;
     });
+  }
+
+  // --- Manual Tab Parser ---
+  function simpleHash(str) {
+    let h = 0;
+    for (let i = 0; i < str.length; i++) {
+      h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(h).toString(36);
+  }
+
+  function parseManualRow(row) {
+    let dateStr = '';
+    const raw = row.date;
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      const gviz = raw.match(/Date\((\d+),(\d+),(\d+)\)/);
+      if (gviz) {
+        const y = gviz[1], m = String(+gviz[2] + 1).padStart(2, '0'), d = gviz[3].padStart(2, '0');
+        dateStr = `${y}-${m}-${d}`;
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+        dateStr = raw.trim();
+      }
+    } else if (raw instanceof Date || (typeof raw === 'object' && raw.getFullYear)) {
+      dateStr = `${raw.getFullYear()}-${String(raw.getMonth()+1).padStart(2,'0')}-${String(raw.getDate()).padStart(2,'0')}`;
+    }
+    if (!dateStr) return null;
+
+    const type = (row.type || '').toLowerCase().trim();
+    if (type !== 'income' && type !== 'expense') return null;
+
+    const amount = parseFloat(row.amount);
+    if (!amount || isNaN(amount)) return null;
+
+    const platform = (row.platform || '').trim();
+    const category = (row.category || '').trim();
+    const note = (row.note || '').trim();
+    const noteHash = simpleHash(note || '_');
+    const id = `manual_${dateStr}_${type}_${category}_${amount}_${noteHash}`;
+
+    return { id, date: dateStr, type, platform, category, amount, note, source: 'manual_sync' };
   }
 
   // --- Email Body Parser ---
@@ -1664,10 +1719,25 @@
       const newCount = mergeTransactions(existing, synced);
       saveTransactions(existing);
       generateMonthlyRent();
+
+      // Manual 탭 동기화 (선택적, 탭 없으면 무시)
+      let manualCount = 0;
+      try {
+        const manualTable = await fetchSheetData(sheetId, 'Manual');
+        const manualRows = parseSheetRows(manualTable);
+        const manualTxs = manualRows.map(parseManualRow).filter(Boolean);
+        const current = loadTransactions();
+        manualCount = mergeTransactions(current, manualTxs);
+        saveTransactions(current);
+      } catch (e) {
+        // Manual 탭 없으면 무시
+      }
+
       render();
 
       const cancelMsg = cancelledCount > 0 ? `, ${cancelledCount}개 취소 삭제` : '';
-      elStatus.textContent = `완료! ${newCount}개 새 거래 추가 (총 ${synced.length}건 확인)${cancelMsg}`;
+      const manualMsg = manualCount > 0 ? `, 수동 ${manualCount}개 추가` : '';
+      elStatus.textContent = `완료! ${newCount}개 새 거래 추가 (총 ${synced.length}건 확인)${cancelMsg}${manualMsg}`;
       elStatus.className = 'sync-status success';
     } catch (err) {
       elStatus.textContent = `동기화 실패: ${err.message}`;
@@ -2354,6 +2424,29 @@
     };
     reader.readAsText(file);
     e.target.value = '';
+  });
+
+  // --- TSV 복사 (수동 입력 → Google Sheets Manual 탭 마이그레이션) ---
+  document.getElementById('btnCopyTsv').addEventListener('click', () => {
+    const el = document.getElementById('tsvStatus');
+    const txs = loadTransactions().filter(tx => !tx.source);
+    if (txs.length === 0) {
+      el.textContent = '수동 입력 내역이 없습니다.';
+      el.className = 'sync-status error';
+      return;
+    }
+    const header = 'date\ttype\tplatform\tcategory\tamount\tnote';
+    const rows = txs.map(tx =>
+      `${tx.date}\t${tx.type}\t${tx.platform || ''}\t${tx.category}\t${tx.amount}\t${tx.note || ''}`
+    );
+    const tsv = header + '\n' + rows.join('\n');
+    navigator.clipboard.writeText(tsv).then(() => {
+      el.textContent = `${txs.length}건 TSV 복사 완료! Google Sheets Manual 탭에 붙여넣기하세요.`;
+      el.className = 'sync-status success';
+    }).catch(() => {
+      el.textContent = '클립보드 복사 실패. 브라우저 권한을 확인하세요.';
+      el.className = 'sync-status error';
+    });
   });
 
   // --- Load saved settings ---
