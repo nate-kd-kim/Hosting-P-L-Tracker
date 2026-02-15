@@ -1389,7 +1389,7 @@
         if (gvizM) em = parseInt(gvizM[1]) + 1;
         else if (isoM) em = parseInt(isoM[1]);
         else if (headerM) em = MONTH_MAP[headerM[1].toLowerCase()];
-        if (em >= 11 && parseInt(mo) <= 2) y = year + 1;
+        if (em > 0 && parseInt(mo) < em && (em - parseInt(mo)) > 6) y = year + 1;
       }
       return `${y}-${mo}-${day}`;
     }
@@ -1612,7 +1612,7 @@
             amount: comm, note: `${b.guest_name || ''} 수수료`.trim(), source: 'agoda_sync' });
         }
         txs.push({ id: `agoda_${b.booking_id}_clean_exp`, date, type: 'expense', platform: 'Agoda', category: '청소요금',
-          amount: 40000, note: guestNote, source: 'agoda_clean_expense' });
+          amount: cleanFee || 40000, note: guestNote, source: 'agoda_clean_expense' });
 
       } else if (b.ota === 'booking') {
         const guestNote = `부킹닷컴 예약 #${b.booking_id}`;
@@ -1639,7 +1639,7 @@
             amount: fee, note: `${b.guest_name || ''} 수수료`.trim(), source: 'airbnb_sync' });
         }
         txs.push({ id: `airbnb_${b.booking_id}_clean_exp`, date, type: 'expense', platform: 'Airbnb', category: '청소요금',
-          amount: 40000, note: guestNote, source: 'airbnb_clean_expense' });
+          amount: clean || 40000, note: guestNote, source: 'airbnb_clean_expense' });
       }
     }
     return txs;
@@ -2021,7 +2021,7 @@
       return String(v);
     }
 
-    const chartBarsHeight = window.innerWidth <= 700 ? 120 : 150;
+    const chartBarsHeight = window.innerWidth <= 480 ? 120 : window.innerWidth <= 900 ? 133 : 150;
     const maxBarHeight = chartBarsHeight - 18;
 
     elChart.innerHTML = data.map(d => {
