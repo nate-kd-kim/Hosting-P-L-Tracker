@@ -1016,6 +1016,10 @@
       </label>
       <button class="btn-sync" id="btnSync">동기화</button>
     </div>
+    <div class="form-group" style="margin-top:12px">
+      <label>기본 청소비 (이메일 파싱값 없을 때)</label>
+      <input type="number" id="defaultCleanFee" placeholder="40000" style="width:140px">
+    </div>
     <div class="sync-status" id="syncStatus"></div>
     <details class="sync-guide">
       <summary>연동 설정 가이드</summary>
@@ -1588,6 +1592,7 @@
 
   // --- Multi-OTA Transaction Generation ---
   function bookingsToTransactionsMultiOta(bookings) {
+    const defaultClean = loadSettings().defaultCleanFee || 40000;
     const txs = [];
     for (const b of bookings) {
       if (!b.booking_id || !b.check_in) continue;
@@ -1612,7 +1617,7 @@
             amount: comm, note: `${b.guest_name || ''} 수수료`.trim(), source: 'agoda_sync' });
         }
         txs.push({ id: `agoda_${b.booking_id}_clean_exp`, date, type: 'expense', platform: 'Agoda', category: '청소요금',
-          amount: cleanFee || 40000, note: guestNote, source: 'agoda_clean_expense' });
+          amount: cleanFee || defaultClean, note: guestNote, source: 'agoda_clean_expense' });
 
       } else if (b.ota === 'booking') {
         const guestNote = `부킹닷컴 예약 #${b.booking_id}`;
@@ -1639,7 +1644,7 @@
             amount: fee, note: `${b.guest_name || ''} 수수료`.trim(), source: 'airbnb_sync' });
         }
         txs.push({ id: `airbnb_${b.booking_id}_clean_exp`, date, type: 'expense', platform: 'Airbnb', category: '청소요금',
-          amount: clean || 40000, note: guestNote, source: 'airbnb_clean_expense' });
+          amount: clean || defaultClean, note: guestNote, source: 'airbnb_clean_expense' });
       }
     }
     return txs;
@@ -1750,7 +1755,8 @@
     // Save settings
     saveSettings({
       sheetUrl: elSheetUrl.value,
-      autoSync: document.getElementById('autoSync').checked
+      autoSync: document.getElementById('autoSync').checked,
+      defaultCleanFee: parseInt(document.getElementById('defaultCleanFee').value) || 0
     });
 
     btnSync.disabled = true;
@@ -2557,20 +2563,27 @@
   if (savedSettings.autoSync) {
     document.getElementById('autoSync').checked = true;
   }
+  if (savedSettings.defaultCleanFee) {
+    document.getElementById('defaultCleanFee').value = savedSettings.defaultCleanFee;
+  }
 
   // --- Save settings on change ---
-  document.getElementById('sheetUrl').addEventListener('change', () => {
-    saveSettings({
+  function getCurrentSettings() {
+    return {
       sheetUrl: document.getElementById('sheetUrl').value,
-      autoSync: document.getElementById('autoSync').checked
-    });
+      autoSync: document.getElementById('autoSync').checked,
+      defaultCleanFee: parseInt(document.getElementById('defaultCleanFee').value) || 0
+    };
+  }
+  document.getElementById('sheetUrl').addEventListener('change', () => {
+    saveSettings(getCurrentSettings());
     updateSheetLink();
   });
   document.getElementById('autoSync').addEventListener('change', () => {
-    saveSettings({
-      sheetUrl: document.getElementById('sheetUrl').value,
-      autoSync: document.getElementById('autoSync').checked
-    });
+    saveSettings(getCurrentSettings());
+  });
+  document.getElementById('defaultCleanFee').addEventListener('change', () => {
+    saveSettings(getCurrentSettings());
   });
 
   // Header scroll shadow
